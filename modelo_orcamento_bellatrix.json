@@ -1,0 +1,163 @@
+{
+  "tipo_documento": "orcamento",
+  "versao_modelo": "1.0",
+  "descricao": "Modelo base de orçamento da Persianas Bellatrix para geração automática de documentos.",
+  "empresa": {
+    "nome": "Persianas Bellatrix",
+    "cnpj": "47.214.728/0001-80",
+    "cidade_uf": "Foz do Iguaçu/PR",
+    "email": "bellatrixpersianas@gmail.com",
+    "telefone": "+55 45 98808 9137",
+    "instagram": "@PersianasBellatrix"
+  },
+  "orcamento": {
+    "numero": "0370-26",
+    "data": "2026-05-13",
+    "cliente": {
+      "nome": "Thaissa Camacho",
+      "documento": null,
+      "telefone": null,
+      "email": null,
+      "endereco": null
+    },
+    "produtos": [
+      {
+        "nome": "PERSIANA DE ROLÔ COM BLACKOUT (2,50) BK VIENA - COR 1 / COR 3 (COR 1)",
+        "ambiente": "SALA",
+        "quantidade": 3.41,
+        "unidade": "m2",
+        "valor_unitario": 294.00,
+        "valor_total": 1002.54,
+        "observacao": null
+      },
+      {
+        "nome": "PERSIANA DE ROLÔ COM BLACKOUT (2,50) BK VIENA - COR 1 / COR 3 (COR 1)",
+        "ambiente": "QUARTO 01",
+        "quantidade": 1.96,
+        "unidade": "m2",
+        "valor_unitario": 294.00,
+        "valor_total": 576.24,
+        "observacao": null
+      },
+      {
+        "nome": "PERSIANA DE ROLÔ COM BLACKOUT (2,50) BK VIENA - COR 1 / COR 3 (COR 1)",
+        "ambiente": "QUARTO 02",
+        "quantidade": 1.75,
+        "unidade": "m2",
+        "valor_unitario": 294.00,
+        "valor_total": 514.50,
+        "observacao": "meio"
+      },
+      {
+        "nome": "PERSIANA DE ROLÔ COM BLACKOUT (2,50) BK VIENA - COR 1 / COR 3 (COR 1)",
+        "ambiente": "QUARTO 03",
+        "quantidade": 1.96,
+        "unidade": "m2",
+        "valor_unitario": 294.00,
+        "valor_total": 576.24,
+        "observacao": null
+      },
+      {
+        "nome": "PERSIANA DE ROLÔ TRANSLÚCIDO (3,00) SCREEN 1% - BRANCO / BEGE / CINZA (CINZA)",
+        "ambiente": "LAVANDERIA",
+        "quantidade": 1.67,
+        "unidade": "m2",
+        "valor_unitario": 295.00,
+        "valor_total": 492.65,
+        "observacao": null
+      },
+      {
+        "nome": "BANDO PERSIANA ROLÔ (6,00) - BRANCO",
+        "ambiente": "PARA TODAS PERSIANAS",
+        "quantidade": 7.64,
+        "unidade": "m",
+        "valor_unitario": 102.00,
+        "valor_total": 779.28,
+        "observacao": "NECESSÁRIO SALA GESSO DISTRIBUIR PESO; consultar valor individual"
+      }
+    ],
+    "totais": {
+      "total_produtos": 3941.45,
+      "subtotal": 3941.45,
+      "desconto": 0.00,
+      "frete": 0.00,
+      "total_orcamento": 3941.45,
+      "moeda": "BRL"
+    },
+    "observacoes": {
+      "formas_pagamento": [
+        "Cartão de Crédito",
+        "Dinheiro",
+        "Pix"
+      ],
+      "condicoes_pagamento": [
+        "À vista",
+        "10x sem juros",
+        "50% entrada e 50% na entrega"
+      ],
+      "regras_comerciais": [
+        "Cobrado metragem quadrada mínima de 1.20 m²"
+      ],
+      "garantia": "1 ano",
+      "prazo_entrega_estimado": "15 dias úteis"
+    }
+  },
+  "layout_documento": {
+    "cabecalho": [
+      "empresa.nome",
+      "empresa.cnpj",
+      "empresa.cidade_uf",
+      "empresa.email",
+      "empresa.telefone"
+    ],
+    "secao_cliente": [
+      "orcamento.cliente.nome",
+      "orcamento.data",
+      "orcamento.numero"
+    ],
+    "tabela_produtos": {
+      "colunas": [
+        "nome",
+        "ambiente",
+        "quantidade",
+        "unidade",
+        "valor_unitario",
+        "valor_total"
+      ],
+      "formatacao": {
+        "quantidade": "decimal com 3 casas quando necessário",
+        "valor_unitario": "moeda BRL",
+        "valor_total": "moeda BRL"
+      }
+    },
+    "rodape": [
+      "observacoes.formas_pagamento",
+      "observacoes.condicoes_pagamento",
+      "observacoes.regras_comerciais",
+      "observacoes.garantia",
+      "empresa.nome",
+      "empresa.telefone",
+      "observacoes.prazo_entrega_estimado",
+      "empresa.instagram"
+    ]
+  },
+  "instrucoes_para_geracao": [
+    "Usar este JSON como referência estrutural para criar novos orçamentos da Persianas Bellatrix.",
+    "Manter o cabeçalho com os dados da empresa.",
+    "Atualizar número do orçamento, data, cliente e itens conforme cada novo pedido.",
+    "Calcular valor_total de cada item multiplicando quantidade por valor_unitario, salvo quando o valor for informado manualmente.",
+    "Calcular total_produtos, subtotal e total_orcamento com base nos itens informados.",
+    "Exibir valores monetários em reais no formato brasileiro, por exemplo: R$ 3.941,45.",
+    "Manter observações comerciais, garantia, formas de pagamento e prazo de entrega no final do documento.",
+    "Quando houver observação específica de um item, exibir junto ao ambiente ou logo abaixo do produto."
+  ],
+  "campos_editaveis_principais": [
+    "orcamento.numero",
+    "orcamento.data",
+    "orcamento.cliente",
+    "orcamento.produtos",
+    "orcamento.totais",
+    "orcamento.observacoes.condicoes_pagamento",
+    "orcamento.observacoes.prazo_entrega_estimado"
+  ]
+}

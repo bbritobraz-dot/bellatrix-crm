@@ -1,0 +1,56 @@
+{
+  "version": "2026-05-13_base_inicial",
+  "currency": "BRL",
+  "measurement_unit": "meters",
+  "global_assumptions": [
+    "Todos os valores são custos de fornecedor, não preço final de venda. Aplicar margem comercial em camada separada.",
+    "Cascade ignorado. Observações e Amostras ignoradas, exceto quando reforçam regra técnica já informada.",
+    "Custos de acionadores ignorados em PH conforme orientação.",
+    "Bandôs de Romana ignorados conforme orientação."
+  ],
+  "lines": {
+    "vertical": {
+      "label": "Persiana Vertical",
+      "base_formula": "charged_area_m2 = max(width_m * height_m, 1.50)",
+      "min_area_m2": 1.5,
+      "max_width_m": null,
+      "accessories": [
+        "Bandô Alumínio Natural Revestido"
+      ],
+      "accessory_formula": "bando_charged_m = max(width_m, 1.50), limit max 6.00"
+    },
+    "ph": {
+      "label": "Persiana Horizontal PH",
+      "base_formula": "charged_area_m2 = max(width_m * height_m, 1.20)",
+      "min_area_m2": 1.2,
+      "max_width_m": 3.0,
+      "ignored": [
+        "acionadores"
+      ]
+    },
+    "rolo": {
+      "label": "Persiana Rolô",
+      "base_formula": "charged_area_m2 = max(width_m * height_m, 1.20)",
+      "min_area_m2": 1.2,
+      "max_width_m": "product.max_width_m",
+      "bando_formula": "charged_m = max(width_m, 1.20), limit max 6.00",
+      "guia_lateral_formula": "charged_m = 2 * height_m + width_m, no minimum"
+    },
+    "romana": {
+      "label": "Persiana Romana",
+      "base_formula": "charged_area_m2 = max(width_m * height_m, 1.20)",
+      "min_area_m2": 1.2,
+      "max_width_m": "product.max_width_m",
+      "ignored": [
+        "bandos"
+      ]
+    },
+    "painel": {
+      "label": "Painel",
+      "base_formula": "charged_area_m2 = max(width_m * height_m, 1.20)",
+      "min_area_m2": 1.2,
+      "max_width_m": "product.max_width_m",
+      "bando_formula": "charged_m = max(width_m, 1.20), limit max 6.00"
+    }
+  }
+}

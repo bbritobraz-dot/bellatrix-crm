@@ -1,0 +1,44 @@
+id,category,name,slug,cost_unit,supplier_cost,active,source_sheet,source_row,notes
+1,laminas_verticais_reposicao,Nuance / Contraste / Polyester Premium,reforma_laminas_verticais_reposicao_nuance_contraste_polyester_premium,linear_m_costurada_ou_pvc,10.0,True,Reformas,7,
+2,laminas_verticais_reposicao,Atenas,reforma_laminas_verticais_reposicao_atenas,linear_m_costurada_ou_pvc,12.0,True,Reformas,8,
+3,laminas_verticais_reposicao,Salta,reforma_laminas_verticais_reposicao_salta,linear_m_costurada_ou_pvc,12.0,True,Reformas,9,
+4,laminas_verticais_reposicao,Turim / Monte Carlo / Veneza,reforma_laminas_verticais_reposicao_turim_monte_carlo_veneza,linear_m_costurada_ou_pvc,15.0,True,Reformas,10,
+5,laminas_verticais_reposicao,Aspen / Alfa / Arezzo / Tropical,reforma_laminas_verticais_reposicao_aspen_alfa_arezzo_tropical,linear_m_costurada_ou_pvc,15.0,True,Reformas,11,
+6,laminas_verticais_reposicao,Natura / Mosaico / Grécia / Milano,reforma_laminas_verticais_reposicao_natura_mosaico_grecia_milano,linear_m_costurada_ou_pvc,15.0,True,Reformas,12,
+7,laminas_verticais_reposicao,San Marino / Firenze / Roma / Palermo / Napoli / Capri / Florença,reforma_laminas_verticais_reposicao_san_marino_firenze_roma_palermo_na,linear_m_costurada_ou_pvc,15.0,True,Reformas,13,
+8,laminas_verticais_reposicao,Verona / Potenza / Catania / Cedro,reforma_laminas_verticais_reposicao_verona_potenza_catania_cedro,linear_m_costurada_ou_pvc,15.0,True,Reformas,14,
+9,laminas_verticais_reposicao,New Arezzo Mescla Bege / Creme,reforma_laminas_verticais_reposicao_new_arezzo_mescla_bege_creme,linear_m_costurada_ou_pvc,15.5,True,Reformas,15,
+10,laminas_verticais_reposicao,Blackout Soleil / Elegance,reforma_laminas_verticais_reposicao_blackout_soleil_elegance,linear_m_costurada_ou_pvc,15.5,True,Reformas,16,
+11,laminas_verticais_reposicao,Blackout Salta,reforma_laminas_verticais_reposicao_blackout_salta,linear_m_costurada_ou_pvc,15.5,True,Reformas,17,
+12,laminas_verticais_reposicao,Blackout Sandstone / Light Green / Viena Rustic 1,reforma_laminas_verticais_reposicao_blackout_sandstone_light_green_vie,linear_m_costurada_ou_pvc,16.0,True,Reformas,18,
+13,laminas_verticais_reposicao,Blackout Alfa / Cedro / Toscana / Milão,reforma_laminas_verticais_reposicao_blackout_alfa_cedro_toscana_milao,linear_m_costurada_ou_pvc,16.0,True,Reformas,19,
+14,laminas_verticais_reposicao,Blackout Rustic / New Arezzo Mescla,reforma_laminas_verticais_reposicao_blackout_rustic_new_arezzo_mescla,linear_m_costurada_ou_pvc,16.0,True,Reformas,20,
+15,laminas_verticais_reposicao,PVC Liso Slim,reforma_laminas_verticais_reposicao_pvc_liso_slim,linear_m_costurada_ou_pvc,16.0,True,Reformas,21,
+16,laminas_verticais_reposicao,PVC Liso Contract,reforma_laminas_verticais_reposicao_pvc_liso_contract,linear_m_costurada_ou_pvc,16.0,True,Reformas,22,
+17,laminas_verticais_reposicao,PVC Rustic,reforma_laminas_verticais_reposicao_pvc_rustic,linear_m_costurada_ou_pvc,16.0,True,Reformas,23,
+18,laminas_verticais_reposicao,PVC Frost / Ribs,reforma_laminas_verticais_reposicao_pvc_frost_ribs,linear_m_costurada_ou_pvc,18.0,True,Reformas,24,
+19,laminas_verticais_reposicao,PVC Madeira / Aquarela,reforma_laminas_verticais_reposicao_pvc_madeira_aquarela,linear_m_costurada_ou_pvc,18.0,True,Reformas,25,
+20,laminas_verticais_reposicao,PVC Chelsea / Soho,reforma_laminas_verticais_reposicao_pvc_chelsea_soho,linear_m_costurada_ou_pvc,19.0,True,Reformas,26,
+21,ph16_lamina_furada_perfilada,PH 16mm Lisa,reforma_ph16_lamina_furada_perfilada_ph_16mm_lisa,linear_m,10.0,True,Reformas,28,
+22,ph16_lamina_furada_perfilada,PH 16mm Metalizada,reforma_ph16_lamina_furada_perfilada_ph_16mm_metalizada,linear_m,12.0,True,Reformas,29,
+23,ph16_lamina_furada_perfilada,PH 16mm Texturizada,reforma_ph16_lamina_furada_perfilada_ph_16mm_texturizada,linear_m,12.0,True,Reformas,30,
+24,ph16_lamina_furada_perfilada,PH 16mm Martelada,reforma_ph16_lamina_furada_perfilada_ph_16mm_martelada,linear_m,12.0,True,Reformas,31,
+25,ph25_lamina_furada_perfilada,PH 25mm Lisa,reforma_ph25_lamina_furada_perfilada_ph_25mm_lisa,linear_m,10.0,True,Reformas,33,
+26,ph25_lamina_furada_perfilada,PH 25mm Metalizada,reforma_ph25_lamina_furada_perfilada_ph_25mm_metalizada,linear_m,10.0,True,Reformas,34,
+27,ph25_lamina_furada_perfilada,PH 25mm Texturizada,reforma_ph25_lamina_furada_perfilada_ph_25mm_texturizada,linear_m,11.0,True,Reformas,35,
+28,ph25_lamina_furada_perfilada,PH 25mm Madeirada,reforma_ph25_lamina_furada_perfilada_ph_25mm_madeirada,linear_m,15.0,True,Reformas,36,
+29,ph25_lamina_furada_perfilada,PH 25mm Perfurada / Perolizada,reforma_ph25_lamina_furada_perfilada_ph_25mm_perfurada_perolizada,linear_m,16.0,True,Reformas,37,
+30,ph25_lamina_furada_perfilada,PH 25mm Martelada / Printing,reforma_ph25_lamina_furada_perfilada_ph_25mm_martelada_printing,linear_m,16.0,True,Reformas,38,
+31,ph50_lamina_furada,PH 50mm Aluminium,reforma_ph50_lamina_furada_ph_50mm_aluminium,linear_m,15.0,True,Reformas,41,
+32,ph50_lamina_furada,PH 50mm Aluminium Perfurado,reforma_ph50_lamina_furada_ph_50mm_aluminium_perfurado,linear_m,18.0,True,Reformas,42,
+33,ph50_lamina_furada,PH 50mm Aluminium Madeirado,reforma_ph50_lamina_furada_ph_50mm_aluminium_madeirado,linear_m,21.0,True,Reformas,43,
+34,ph50_pvc_lamina_furada,PH 50mm PVC Liso,reforma_ph50_pvc_lamina_furada_ph_50mm_pvc_liso,linear_m,19.0,True,Reformas,45,
+35,ph50_pvc_lamina_furada,PH 50mm PVC INCA Wood,reforma_ph50_pvc_lamina_furada_ph_50mm_pvc_inca_wood,linear_m,22.0,True,Reformas,46,
+36,ph50_madeira_sintetica_lamina_furada,PH 50mm Madeira Sintética,reforma_ph50_madeira_sintetica_lamina_furada_ph_50mm_madeira_sintetica,linear_m,30.0,True,Reformas,48,
+37,mao_de_obra_e_cortes,Mão de obra manutenção trilho vertical,reforma_mao_de_obra_e_cortes_mao_de_obra_manutencao_trilho_vertical,unit,80.0,True,Reformas,50,Peças utilizadas devem ser cobradas à parte.
+38,mao_de_obra_e_cortes,Mão de obra manutenção PH 16/25,reforma_mao_de_obra_e_cortes_mao_de_obra_manutencao_ph_16_25,unit,100.0,True,Reformas,51,Peças utilizadas devem ser cobradas à parte.
+39,mao_de_obra_e_cortes,Mão de obra Romana/Rolo/Painel/Cascade/Celular/PH50,reforma_mao_de_obra_e_cortes_mao_de_obra_romana_rolo_painel_cascade_ce,unit,150.0,True,Reformas,52,Peças utilizadas devem ser cobradas à parte.
+40,mao_de_obra_e_cortes,Corte lâminas PVC unidade,reforma_mao_de_obra_e_cortes_corte_laminas_pvc_unidade,unit,120.0,True,Reformas,53,Peças utilizadas devem ser cobradas à parte.
+41,mao_de_obra_e_cortes,Corte lâminas PH16/25/50 unidade,reforma_mao_de_obra_e_cortes_corte_laminas_ph16_25_50_unidade,unit,120.0,True,Reformas,54,Peças utilizadas devem ser cobradas à parte.
+42,mao_de_obra_e_cortes,Corte lâminas verticais costuradas sem montar unidade,reforma_mao_de_obra_e_cortes_corte_laminas_verticais_costuradas_sem_mo,unit,100.0,True,Reformas,55,Peças utilizadas devem ser cobradas à parte.
+43,mao_de_obra_e_cortes,Corte lâminas verticais costuradas e montadas unidade,reforma_mao_de_obra_e_cortes_corte_laminas_verticais_costuradas_e_mont,unit,120.0,True,Reformas,56,Peças utilizadas devem ser cobradas à parte.

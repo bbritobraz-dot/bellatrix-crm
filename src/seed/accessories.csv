@@ -1,0 +1,8 @@
+id,sku,line,name,slug,cost_unit,supplier_cost,min_quantity,max_quantity,calculation_formula,active,source_sheet,source_row,notes
+1,ACC-0001,vertical,Bandô Alumínio Natural Revestido,vertical_bando_aluminio_natural_revestido,linear_m,48.0,1.5,6,width,True,VERTICAIS,41,"Opcional. Usuário definiu cálculo por metro linear, apesar da planilha indicar m²."
+2,ACC-0002,rolo,Bandô Branco,rolo_bando_branco,linear_m,73.0,1.2,6,width,True,Rolo,66,Opcional. Cálculo por largura.
+3,ACC-0003,rolo,Bandô Preto,rolo_bando_preto,linear_m,82.0,1.2,6,width,True,Rolo,67,Opcional. Cálculo por largura.
+4,ACC-0004,rolo,Caixa Box Branco,rolo_caixa_box_branco,linear_m,180.0,1.2,6,width,True,Rolo,69,"Opcional. Quando selecionado, pode exigir guia lateral."
+5,ACC-0005,rolo,Caixa Box Preto,rolo_caixa_box_preto,linear_m,195.0,1.2,6,width,True,Rolo,70,"Opcional. Quando selecionado, pode exigir guia lateral."
+6,ACC-0006,rolo,"Guia Lateral 5,5cm - Par",rolo_guia_lateral_5_5cm_par,linear_m,111.0,,,2*height+width,True,Rolo,68,"Usar fórmula 2H+L, sem mínimo informado."
+7,ACC-0007,painel,Bandô Para Painel - Branco,painel_bando_para_painel_branco,linear_m,73.0,1.2,6,width,True,Painel,50,Opcional. Cálculo por largura.
