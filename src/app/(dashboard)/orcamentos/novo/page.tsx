@@ -30,7 +30,7 @@ export default async function NovoOrcamentoPage() {
   // Buscar clientes elegíveis (novo lead ou visita marcada/realizada)
   const { data: clients } = await supabase
     .from("clients")
-    .select("id, name, phone, address, status")
+    .select("id, name, phone, email, address, status")
     .in("status", ["novo_lead", "visita_agendada", "visita_realizada", "orcamento_enviado", "em_negociacao"])
     .order("name");
 

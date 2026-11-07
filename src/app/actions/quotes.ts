@@ -27,6 +27,7 @@ async function findOrCreateClient(supabase: any, data: any): Promise<string> {
     .insert({
       name: data.clientName,
       phone: data.clientPhone || '0000000000',
+      email: data.clientEmail?.trim() || null,
       address: data.clientAddress,
       status: 'novo_lead'
     })
@@ -107,6 +108,9 @@ export async function saveQuote(data: any) {
     }
 
     const clientId = data.clientId || await findOrCreateClient(supabase, data);
+    if (data.clientId && data.clientEmail?.trim()) {
+      await supabase.from('clients').update({ email: data.clientEmail.trim() }).eq('id', clientId);
+    }
 
     const { data: quote, error: quoteError } = await supabase
       .from('quotes')
@@ -197,6 +201,7 @@ export async function updateQuote(quoteId: string, data: any) {
         name: data.clientName,
         phone: data.clientPhone || '0000000000',
         address: data.clientAddress,
+        ...(data.clientEmail?.trim() ? { email: data.clientEmail.trim() } : {}),
         status: 'orcamento_enviado'
       })
       .eq('id', currentQuote.client_id);
@@ -237,7 +242,7 @@ export async function getQuotes(statusFilters?: string[]) {
     .from('quotes')
     .select(`
       *,
-      client:clients(name, phone, address),
+      client:clients(id, name, phone, email, address),
       quote_items(
         id,
         product_id,
