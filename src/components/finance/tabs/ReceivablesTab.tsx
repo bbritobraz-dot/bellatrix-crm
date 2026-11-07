@@ -1,4 +1,5 @@
 "use client";
+import { notify } from "@/lib/notify";
 import { useState } from "react";
 import { TrendingUp, User, Printer } from "lucide-react";
 import { registerClientPayment } from "@/app/actions/finance";
@@ -160,7 +161,7 @@ export function ReceivablesTab({ receivables, bankAccounts }: { receivables: any
       }
       setModal(null);
     } else {
-      alert(res.error || "Erro ao registrar pagamento.");
+      notify.error(res.error || "Erro ao registrar pagamento.");
     }
     setIsSaving(false);
   };

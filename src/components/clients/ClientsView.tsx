@@ -1,4 +1,5 @@
 "use client";
+import { notify } from "@/lib/notify";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -194,7 +195,7 @@ export function ClientsView({ initialClients }: { initialClients: any[] }) {
 
     const result = await updateClientStatus(clientId, newStatus);
     if (!result.success) {
-      alert("Não foi possível mudar o status: " + result.error);
+      notify.error("Não foi possível mudar o status: " + result.error);
       setClients(previousClients);
     }
   };
@@ -237,7 +238,7 @@ export function ClientsView({ initialClients }: { initialClients: any[] }) {
       // Antes o erro só ia para o console: o card mudava de coluna sem salvar
       console.error(err);
       setClients(previousClients);
-      alert(err?.message || "Não foi possível salvar.");
+      notify.error(err?.message || "Não foi possível salvar.");
     }
     setIsProcessing(false);
   };

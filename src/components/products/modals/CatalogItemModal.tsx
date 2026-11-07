@@ -1,4 +1,5 @@
 "use client";
+import { notify } from "@/lib/notify";
 
 import { useState } from "react";
 import { Save, Settings, X } from "lucide-react";
@@ -22,7 +23,7 @@ export function CatalogItemModal({ activeTab, onClose, onSuccess }: CatalogItemM
   });
 
   const handleCreateNew = async () => {
-    if (!newItem.name) { alert("Nome é obrigatório"); return; }
+    if (!newItem.name) { notify.warning("Nome é obrigatório"); return; }
     setIsProcessing(true);
     
     const payload: any = {
@@ -45,7 +46,7 @@ export function CatalogItemModal({ activeTab, onClose, onSuccess }: CatalogItemM
       onSuccess();
       onClose();
     } else {
-      alert("Erro ao criar: " + r.error);
+      notify.error("Erro ao criar: " + r.error);
     }
     setIsProcessing(false);
   };

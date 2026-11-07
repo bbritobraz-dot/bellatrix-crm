@@ -1,4 +1,5 @@
 "use client";
+import { notify } from "@/lib/notify";
 
 import { useState } from "react";
 import { Search, AlertCircle, Clock, CheckCircle, DollarSign, Factory, RotateCcw } from "lucide-react";
@@ -31,7 +32,7 @@ export function ProductionClientView({
     try {
       await downloadFactoryOrderPdf(quote);
     } catch (e: any) {
-      alert("Erro ao gerar pedido de fábrica: " + (e?.message || "tente novamente"));
+      notify.error("Erro ao gerar pedido de fábrica: " + (e?.message || "tente novamente"));
     } finally {
       setFactoryLoadingId(null);
     }

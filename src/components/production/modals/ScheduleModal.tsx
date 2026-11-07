@@ -1,4 +1,5 @@
 "use client";
+import { notify } from "@/lib/notify";
 
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
@@ -35,12 +36,12 @@ export function ScheduleModal({ quote, onClose, onSuccess }: ScheduleModalProps)
       if (res.success) {
         onSuccess(quote.id, scheduleDate, scheduleTime);
         onClose();
-        alert("Instalação agendada com sucesso!");
+        notify.success("Instalação agendada com sucesso!");
       } else { 
-        alert("Erro ao agendar instalação: " + res.error); 
+        notify.error("Erro ao agendar instalação: " + res.error); 
       }
     } catch { 
-      alert("Erro ao agendar instalação."); 
+      notify.error("Erro ao agendar instalação."); 
     } finally { 
       setIsScheduling(false); 
     }

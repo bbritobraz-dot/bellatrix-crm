@@ -1,4 +1,5 @@
 "use client";
+import { notify, confirmDialog } from "@/lib/notify";
 import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { createExpense, deleteExpense } from "@/app/actions/finance";
@@ -20,7 +21,7 @@ export function ExpensesTab({ expenses, setExpenses, categories, bankAccounts }:
   const reset = () => { setDesc(""); setAmount(""); setCatId(""); setDueDate(""); setBankAccountId(""); };
 
   const handleSave = async () => {
-    if (!desc || !amount || !catId || !bankAccountId) { alert("Preencha descrição, valor, categoria e conta bancária."); return; }
+    if (!desc || !amount || !catId || !bankAccountId) { notify.warning("Preencha descrição, valor, categoria e conta bancária."); return; }
     setIsSaving(true);
     const res = await createExpense({
       description: desc, amount: Number(amount), category_id: catId,
@@ -39,9 +40,11 @@ export function ExpensesTab({ expenses, setExpenses, categories, bankAccounts }:
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Excluir despesa?")) return;
+    if (!(await confirmDialog({ message: "Excluir esta despesa? O valor pago volta para a conta bancária.", danger: true }))) return;
+    const res = await deleteExpense(id);
+    if (!res.success) { notify.error("Erro ao excluir despesa: " + res.error); return; }
     setExpenses(expenses.filter(e => e.id !== id));
-    await deleteExpense(id);
+    notify.success("Despesa excluída.");
   };
 
   const now = new Date();

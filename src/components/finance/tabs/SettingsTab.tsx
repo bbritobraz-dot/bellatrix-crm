@@ -1,4 +1,5 @@
 "use client";
+import { notify } from "@/lib/notify";
 
 import { useState } from "react";
 import { CreditCard, Save, RefreshCcw, Info } from "lucide-react";
@@ -17,7 +18,7 @@ export function SettingsTab({ initialSettings }: { initialSettings: any[] }) {
     if (res.success) {
       setSettings(settings.map(s => s.installments === installments ? { ...s, fee_percent: feeValue } : s));
     } else {
-      alert("Erro ao salvar taxa: " + res.error);
+      notify.error("Erro ao salvar taxa: " + res.error);
     }
     setIsSaving(null);
   };

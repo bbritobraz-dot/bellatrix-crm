@@ -1,4 +1,5 @@
 "use client";
+import { notify, confirmDialog } from "@/lib/notify";
 import { useState } from "react";
 import { Plus, Calendar, Printer } from "lucide-react";
 import { registerPayment } from "@/app/actions/finance";
@@ -90,7 +91,7 @@ export function IncomesTab({ payments, setPayments, bankAccounts }: {
   const [installments, setInstallments] = useState<number>(1);
 
   const handleSave = async () => {
-    if (!desc || !amount || !bankAccountId) { alert("Preencha descrição, valor e selecione uma conta bancária."); return; }
+    if (!desc || !amount || !bankAccountId) { notify.warning("Preencha descrição, valor e selecione uma conta bancária."); return; }
     setIsSaving(true);
     const res = await registerPayment({
       amount: Number(amount), payment_method: method,
@@ -105,7 +106,7 @@ export function IncomesTab({ payments, setPayments, bankAccounts }: {
       setPayments([newPayment, ...payments]);
       setIsOpen(false); setDesc(""); setAmount(""); setBankAccountId("");
       
-      if (confirm("Pagamento registrado! Deseja emitir o recibo agora?")) {
+      if (await confirmDialog({ title: "Pagamento registrado", message: "Deseja emitir o recibo agora?", confirmLabel: "Emitir recibo", cancelLabel: "Agora não" })) {
         printReceipt("Cliente Avulso", Number(amount), method, desc);
       }
     }

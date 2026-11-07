@@ -1,4 +1,5 @@
 "use client";
+import { notify } from "@/lib/notify";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -254,7 +255,7 @@ export function AgendaClientView({ initialVisits, initialInstallations = [] }: {
     if (res.success) {
       window.location.reload(); 
     } else {
-      alert("Erro ao atualizar status: " + res.error);
+      notify.error("Erro ao atualizar status: " + res.error);
     }
     setIsUpdating(false);
     setIsStatusModalOpen(false);

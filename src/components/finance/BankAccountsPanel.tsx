@@ -1,4 +1,5 @@
 "use client";
+import { notify, confirmDialog } from "@/lib/notify";
 import { useState } from "react";
 import { Plus, Pencil, Trash2, Building2, Check, X, ArrowRightLeft } from "lucide-react";
 import { createBankAccount, updateBankAccount, deleteBankAccount, transferFunds } from "@/app/actions/finance";
@@ -47,22 +48,22 @@ export function BankAccountsPanel({
   const handleUpdateBalance = async (id: string) => {
     if (editBalance === "") return;
     const res = await updateBankAccount(id, Number(editBalance));
-    if (!res.success) { alert("Erro ao atualizar saldo: " + res.error); return; }
+    if (!res.success) { notify.error("Erro ao atualizar saldo: " + res.error); return; }
     updateAccounts(accounts.map(a => a.id === id ? { ...a, balance: editBalance } : a));
     setEditingId(null);
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Excluir conta bancária?")) return;
+    if (!(await confirmDialog({ message: "Excluir esta conta bancária?", danger: true }))) return;
     const res = await deleteBankAccount(id);
-    if (!res.success) { alert(res.error); return; }
+    if (!res.success) { notify.error(res.error); return; }
     updateAccounts(accounts.filter(a => a.id !== id));
   };
 
   const handleTransfer = async () => {
     if (!transferFrom || !transferTo || !transferAmount || Number(transferAmount) <= 0) return;
     if (transferFrom === transferTo) {
-      alert("Selecione contas diferentes para transferência.");
+      notify.warning("Selecione contas diferentes para transferência.");
       return;
     }
     setIsTransferring(true);
@@ -79,7 +80,7 @@ export function BankAccountsPanel({
       setTransferTo("");
       setTransferAmount("");
     } else {
-      alert(res.error);
+      notify.error(res.error);
     }
     setIsTransferring(false);
   };

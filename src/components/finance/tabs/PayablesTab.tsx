@@ -1,4 +1,5 @@
 "use client";
+import { notify } from "@/lib/notify";
 import { useState } from "react";
 import { AlertCircle, Building2, FileText, CheckCircle } from "lucide-react";
 import { liquidateExpense, liquidateSupplierPayment } from "@/app/actions/finance";
@@ -35,7 +36,7 @@ export function PayablesTab({ payables, bankAccounts }: { payables: Payables; ba
 
   const handleLiquidate = async () => {
     if (!modal || !payAmount || !bankAccountId) {
-      alert("Por favor, selecione a conta bancária.");
+      notify.warning("Por favor, selecione a conta bancária.");
       return;
     }
     setIsSaving(true);
@@ -67,7 +68,7 @@ export function PayablesTab({ payables, bankAccounts }: { payables: Payables; ba
       }
     }
     if (res?.success) { setModal(null); }
-    else { alert(res?.error || "Erro ao registrar pagamento."); }
+    else { notify.error(res?.error || "Erro ao registrar pagamento."); }
     setIsSaving(false);
   };
 

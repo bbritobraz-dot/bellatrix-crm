@@ -1,4 +1,5 @@
 "use client";
+import { notify } from "@/lib/notify";
 
 import { useState } from "react";
 import { Plus, Trash2, Calculator, Save, FileText, CheckCircle, Download, Settings2, Pencil, X } from "lucide-react";
@@ -140,7 +141,7 @@ export function QuoteForm({
 
   const handleAddItem = () => {
     if (!selectedProductId || width === "" || height === "") {
-      alert("Preencha produto, largura e altura.");
+      notify.warning("Preencha produto, largura e altura.");
       return;
     }
 
