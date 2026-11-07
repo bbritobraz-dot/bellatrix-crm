@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createAuthedClient } from "@/lib/supabase/server";
 import { QuoteForm } from "@/components/quotes/QuoteForm";
 
 export const dynamic = "force-dynamic";
@@ -10,7 +10,7 @@ export default async function EditarOrcamentoPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const supabase = await createClient();
+  const supabase = await createAuthedClient();
 
   const [
     { data: quote },
@@ -36,6 +36,10 @@ export default async function EditarOrcamentoPage({
           sale_price_total,
           margin_percent,
           notes,
+          color,
+          command_side,
+          command_height_m,
+          ambient,
           quote_item_accessories(
             id,
             accessory_id,

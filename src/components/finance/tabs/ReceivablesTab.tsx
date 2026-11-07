@@ -160,7 +160,7 @@ export function ReceivablesTab({ receivables, bankAccounts }: { receivables: any
       }
       setModal(null);
     } else {
-      alert("Erro ao registrar pagamento.");
+      alert(res.error || "Erro ao registrar pagamento.");
     }
     setIsSaving(false);
   };

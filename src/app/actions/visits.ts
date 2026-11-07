@@ -1,10 +1,10 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createAuthedClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
 export async function scheduleVisit(clientId: string, date: string, time: string, address: string) {
-  const supabase = await createClient();
+  const supabase = await createAuthedClient();
 
   try {
     // 1. Inserir a visita
@@ -46,7 +46,7 @@ export async function updateVisitStatus(
   newDate?: string,
   newTime?: string
 ) {
-  const supabase = await createClient();
+  const supabase = await createAuthedClient();
 
   try {
     // 1. Atualizar status da visita

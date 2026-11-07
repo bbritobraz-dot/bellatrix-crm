@@ -1,10 +1,10 @@
-import { createClient } from "@/lib/supabase/server";
+import { createAuthedClient } from "@/lib/supabase/server";
 import { QuoteForm } from "@/components/quotes/QuoteForm";
 
 export const dynamic = 'force-dynamic';
 
 export default async function NovoOrcamentoPage() {
-  const supabase = await createClient();
+  const supabase = await createAuthedClient();
 
   // Buscar produtos ativos
   const { data: products } = await supabase

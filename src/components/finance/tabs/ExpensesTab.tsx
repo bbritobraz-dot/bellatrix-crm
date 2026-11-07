@@ -12,7 +12,7 @@ export function ExpensesTab({ expenses, setExpenses, categories, bankAccounts }:
   const [desc, setDesc] = useState("");
   const [amount, setAmount] = useState<number | "">("");
   const [catId, setCatId] = useState("");
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const [date, setDate] = useState(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; });
   const [dueDate, setDueDate] = useState("");
   const [method, setMethod] = useState("pix");
   const [bankAccountId, setBankAccountId] = useState("");
@@ -24,15 +24,15 @@ export function ExpensesTab({ expenses, setExpenses, categories, bankAccounts }:
     setIsSaving(true);
     const res = await createExpense({
       description: desc, amount: Number(amount), category_id: catId,
-      date: new Date(date).toISOString(),
-      due_date: dueDate ? new Date(dueDate).toISOString() : undefined,
+      date, // "YYYY-MM-DD": o servidor converte no fuso de São Paulo
+      due_date: dueDate || undefined,
       payment_method: method,
       bank_account_id: bankAccountId,
     });
     if (res.success) {
       const catName = categories.find(c => c.id === catId)?.name || "";
       const bankName = bankAccounts.find(b => b.id === bankAccountId)?.bank_name || "";
-      setExpenses([{ id: Math.random().toString(), description: desc, amount, date, due_date: dueDate, category: { name: catName }, payment_method: method, bank_name: bankName }, ...expenses]);
+      setExpenses([{ id: res.id, description: desc, amount, date, due_date: dueDate, category: { name: catName }, payment_method: method, bank_name: bankName }, ...expenses]);
       setIsOpen(false); reset();
     }
     setIsSaving(false);

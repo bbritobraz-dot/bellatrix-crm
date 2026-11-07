@@ -108,8 +108,8 @@ export function ClientsView({ initialClients }: { initialClients: any[] }) {
 
   const filteredClients = clients.filter((c) => {
     const matchesSearch =
-      c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.phone.includes(searchTerm) ||
+      (c.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (c.phone || "").includes(searchTerm) ||
       (c.email && c.email.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesStatus = statusFilter ? c.status === statusFilter : true;
     return matchesSearch && matchesStatus;
@@ -194,6 +194,7 @@ export function ClientsView({ initialClients }: { initialClients: any[] }) {
 
     const result = await updateClientStatus(clientId, newStatus);
     if (!result.success) {
+      alert("Não foi possível mudar o status: " + result.error);
       setClients(previousClients);
     }
   };
@@ -201,6 +202,7 @@ export function ClientsView({ initialClients }: { initialClients: any[] }) {
   const handleConfirmAction = async () => {
     if (!actionModal.type || !actionModal.clientId) return;
     setIsProcessing(true);
+    const previousClients = [...clients];
 
     try {
       if (actionModal.type === "perdido") {
@@ -210,7 +212,8 @@ export function ClientsView({ initialClients }: { initialClients: any[] }) {
             c.id === actionModal.clientId ? { ...c, status: "perdido" } : c,
           ),
         );
-        await markClientLost(actionModal.clientId, lossReason);
+        const res = await markClientLost(actionModal.clientId, lossReason);
+        if (!res.success) throw new Error(res.error);
       } else if (actionModal.type === "visita_agendada") {
         if (!visitDate || !visitTime) throw new Error("Informe data e hora");
         const client = clients.find((c) => c.id === actionModal.clientId);
@@ -221,16 +224,20 @@ export function ClientsView({ initialClients }: { initialClients: any[] }) {
               : c,
           ),
         );
-        await scheduleVisit(
+        const res = await scheduleVisit(
           actionModal.clientId,
           visitDate,
           visitTime,
           client?.address || "",
         );
+        if (!res.success) throw new Error(res.error);
       }
       closeModal();
     } catch (err: any) {
+      // Antes o erro só ia para o console: o card mudava de coluna sem salvar
       console.error(err);
+      setClients(previousClients);
+      alert(err?.message || "Não foi possível salvar.");
     }
     setIsProcessing(false);
   };
@@ -244,6 +251,12 @@ export function ClientsView({ initialClients }: { initialClients: any[] }) {
 
   const getStatusBadge = (status: string) => {
     const col = KANBAN_COLUMNS.find((c) => c.id === status);
+    if (!col && status === "pos_venda")
+      return (
+        <span className="px-3 py-1 rounded-full text-[10px] uppercase tracking-wider font-bold border bg-emerald-50 text-emerald-700 border-emerald-100">
+          PÓS-VENDA
+        </span>
+      );
     if (!col)
       return (
         <span className="px-3 py-1 rounded-full text-[10px] uppercase tracking-wider font-bold border bg-slate-100 text-slate-700">

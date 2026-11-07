@@ -1,10 +1,10 @@
-import { createClient } from "@/lib/supabase/server";
+import { createAuthedClient } from "@/lib/supabase/server";
 import { ClientsView } from "@/components/clients/ClientsView";
 
 export const dynamic = 'force-dynamic';
 
 export default async function ClientesPage() {
-  const supabase = await createClient();
+  const supabase = await createAuthedClient();
 
   const { data: clients, error } = await supabase
     .from("clients")

@@ -41,11 +41,17 @@ export function PayablesTab({ payables, bankAccounts }: { payables: Payables; ba
     setIsSaving(true);
     let res;
     if (modal.type === "expense") {
-      res = await liquidateExpense(modal.item.id, { paid_amount: Number(payAmount), paid_method: payMethod, bank_account_id: bankAccountId });
-      if (res.success) {
+      const expenseRes = await liquidateExpense(modal.item.id, { paid_amount: Number(payAmount), paid_method: payMethod, bank_account_id: bankAccountId });
+      res = expenseRes;
+      if (expenseRes.success) {
         setItems(prev => ({
           ...prev,
-          expenses: prev.expenses.map(e => e.id === modal.item.id ? { ...e, is_paid: true } : e)
+          // Pagamento parcial: o restante continua em aberto com o valor atualizado
+          expenses: prev.expenses.map(e => {
+            if (e.id !== modal.item.id) return e;
+            const remaining = Number(expenseRes.remaining ?? 0);
+            return remaining > 0 ? { ...e, amount: remaining } : { ...e, is_paid: true };
+          })
         }));
       }
     } else {
@@ -61,7 +67,7 @@ export function PayablesTab({ payables, bankAccounts }: { payables: Payables; ba
       }
     }
     if (res?.success) { setModal(null); }
-    else { alert("Erro ao registrar pagamento."); }
+    else { alert(res?.error || "Erro ao registrar pagamento."); }
     setIsSaving(false);
   };
 

@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createAuthedClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
 export async function updateCatalogItem(
@@ -8,7 +8,7 @@ export async function updateCatalogItem(
   id: string,
   payload: any
 ) {
-  const supabase = await createClient();
+  const supabase = await createAuthedClient();
 
   try {
     const { error } = await supabase
@@ -30,7 +30,7 @@ export async function createCatalogItem(
   table: 'products' | 'accessories' | 'reforms',
   payload: any
 ) {
-  const supabase = await createClient();
+  const supabase = await createAuthedClient();
 
   try {
     const { error } = await supabase
@@ -51,7 +51,7 @@ export async function deleteCatalogItem(
   table: 'products' | 'accessories' | 'reforms',
   id: string
 ) {
-  const supabase = await createClient();
+  const supabase = await createAuthedClient();
 
   try {
     const { error } = await supabase
