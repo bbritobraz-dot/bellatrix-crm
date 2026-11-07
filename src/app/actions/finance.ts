@@ -17,10 +17,11 @@ export async function getCardFeeSettings() {
 
 export async function updateCardFeeSetting(installments: number, fee_percent: number) {
   const supabase = await createAuthedClient();
+  if (!(installments >= 0 && installments <= 12)) return { success: false, error: "Parcelamento inválido." };
+  if (!(fee_percent >= 0 && fee_percent < 100)) return { success: false, error: "Taxa deve estar entre 0% e 100%." };
   const { error } = await supabase
     .from("card_fee_settings")
-    .update({ fee_percent, updated_at: new Date().toISOString() })
-    .eq("installments", installments);
+    .upsert({ installments, fee_percent, updated_at: new Date().toISOString() }, { onConflict: "installments" });
   
   if (error) return { success: false, error: error.message };
   revalidatePath("/financeiro");
