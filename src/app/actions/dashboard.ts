@@ -98,8 +98,19 @@ export async function getDashboardStats(startDate?: string, endDate?: string) {
     return exp.is_paid === true;
   }).reduce((acc, exp) => acc + Number(exp.paid_amount ?? exp.amount ?? 0), 0);
 
+  // Pagamentos à fábrica de um pedido também viram despesa ("Custo de Produtos").
+  // No caixa (resultadoReal) eles contam, mas no lucro projetado o custo do pedido
+  // já entra em custoProjetado — somar de novo descontava a fábrica duas vezes.
+  const isPagamentoFabricaDePedido = (exp: any) =>
+    exp.category?.name === 'Custo de Produtos' &&
+    (exp.quote_id != null || /Fornecedor - Pedido/i.test(exp.description || ''));
+
+  const despesasOperacionaisPeriodo = (expenses || [])
+    .filter(exp => exp.is_paid === true && !isPagamentoFabricaDePedido(exp))
+    .reduce((acc, exp) => acc + Number(exp.paid_amount ?? exp.amount ?? 0), 0);
+
   const resultadoReal = recebidoPeriodo - despesasPagasPeriodo;
-  const lucroProjetado = vendasFechadas - custoProjetado - despesasPagasPeriodo;
+  const lucroProjetado = vendasFechadas - custoProjetado - despesasOperacionaisPeriodo;
 
   const totalOrçamentos = quotes.length;
   const emProducao = quotes.filter(q => q.status === 'em_producao').length;
