@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import {
   Search, Calendar, Factory, ChevronRight, CheckCircle,
   CreditCard, Building2, AlertCircle, Pencil, RotateCcw, XCircle,
-  Plus, FileText, Trash2, Download
+  Plus, FileText, Trash2, Download, Send
 } from "lucide-react";
 import { BankAccountSelect } from "@/components/finance/BankAccountSelect";
 import { moveToProduction, deleteQuote, updateQuoteStatus } from "@/app/actions/quotes";
@@ -16,6 +16,14 @@ import { ReopenQuoteDialog } from "@/components/quotes/ReopenQuoteDialog";
 import { downloadQuotePdf } from "@/lib/quotes/pdfData";
 import { registerPayment } from "@/app/actions/finance";
 
+
+const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
+  rascunho: { label: "Rascunho", cls: "bg-slate-100 border-slate-200 text-slate-700" },
+  enviado: { label: "Enviado", cls: "bg-blue-50 border-blue-200 text-blue-700" },
+  aprovado: { label: "Aprovado", cls: "bg-emerald-50 border-emerald-200 text-emerald-700" },
+  recusado: { label: "Recusado", cls: "bg-rose-50 border-rose-200 text-rose-700" },
+  expirado: { label: "Expirado", cls: "bg-amber-50 border-amber-200 text-amber-700" },
+};
 
 export function QuotesListView({ initialQuotes, bankAccounts }: { initialQuotes: any[], bankAccounts: any[] }) {
   const router = useRouter();
@@ -205,14 +213,8 @@ export function QuotesListView({ initialQuotes, bankAccounts }: { initialQuotes:
 
             <div className="relative z-10">
               <div className="flex justify-between items-start mb-6">
-                <span className={`px-4 py-1.5 rounded-2xl text-[10px] font-heading font-bold uppercase tracking-widest border shadow-sm
-                  ${quote.status === 'aprovado' ? 'bg-emerald-50 border-emerald-100 text-emerald-600' :
-                    quote.status === 'enviado' ? 'bg-primary/5 border-primary/10 text-primary' :
-                    quote.status === 'recusado' ? 'bg-rose-50 border-rose-100 text-rose-600' :
-                    quote.status === 'expirado' ? 'bg-slate-50 border-slate-100 text-slate-500' :
-                    'bg-slate-50 border-slate-100 text-slate-500'}`}
-                >
-                  {quote.status}
+                <span className={`px-4 py-1.5 rounded-2xl text-[10px] font-heading font-bold uppercase tracking-widest border ${STATUS_BADGE[quote.status]?.cls || 'bg-slate-100 border-slate-200 text-slate-600'}`}>
+                  {STATUS_BADGE[quote.status]?.label || quote.status}
                 </span>
                 <span className="text-[10px] text-slate-300 font-heading font-bold tracking-[0.2em] uppercase">
                   #{quote.id.split('-')[0].toUpperCase()}
@@ -246,7 +248,7 @@ export function QuotesListView({ initialQuotes, bankAccounts }: { initialQuotes:
                       {quote.status === 'rascunho' && (
                         <button
                           onClick={() => router.push(`/orcamentos/${quote.id}/editar`)}
-                          className="bg-slate-50 text-slate-600 hover:bg-slate-100 font-heading font-bold uppercase tracking-widest py-4 rounded-2xl transition-all flex items-center justify-center gap-2 text-[10px]"
+                          className="bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 font-heading font-bold uppercase tracking-widest py-4 rounded-2xl transition-all flex items-center justify-center gap-2 text-[10px]"
                         >
                           <Pencil className="w-3.5 h-3.5" /> Editar
                         </button>
@@ -262,19 +264,19 @@ export function QuotesListView({ initialQuotes, bankAccounts }: { initialQuotes:
                     <div className="grid grid-cols-3 gap-2">
                       <button
                         onClick={() => handleStatusUpdate(quote.id, 'enviado')}
-                        className={`py-3 rounded-xl transition-all text-[9px] font-heading font-bold uppercase tracking-widest flex items-center justify-center gap-1.5 ${quote.status === 'enviado' ? 'bg-primary/5 text-primary border border-primary/10' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'}`}
+                        className={`py-3 rounded-xl transition-all text-[9px] font-heading font-bold uppercase tracking-widest flex items-center justify-center gap-1.5 border ${quote.status === 'enviado' ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'}`}
                       >
-                        Enviado
+                        <Send className="w-3 h-3" /> Enviado
                       </button>
                       <button
                         onClick={() => handleStatusUpdate(quote.id, 'aprovado')}
-                        className={`py-3 rounded-xl transition-all text-[9px] font-heading font-bold uppercase tracking-widest flex items-center justify-center gap-1.5 ${quote.status === 'aprovado' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'}`}
+                        className={`py-3 rounded-xl transition-all text-[9px] font-heading font-bold uppercase tracking-widest flex items-center justify-center gap-1.5 border ${quote.status === 'aprovado' ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm' : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'}`}
                       >
-                        Aprovar
+                        <CheckCircle className="w-3 h-3" /> {quote.status === 'aprovado' ? 'Aprovado' : 'Aprovar'}
                       </button>
                       <button
                         onClick={() => handleStatusUpdate(quote.id, 'recusado')}
-                        className="bg-slate-50 text-slate-400 hover:bg-rose-50 hover:text-rose-600 py-3 rounded-xl transition-all text-[9px] font-heading font-bold uppercase tracking-widest flex items-center justify-center gap-1.5"
+                        className="bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 py-3 rounded-xl transition-all text-[9px] font-heading font-bold uppercase tracking-widest flex items-center justify-center gap-1.5"
                       >
                         <XCircle className="w-3 h-3" /> Recusar
                       </button>
@@ -294,13 +296,13 @@ export function QuotesListView({ initialQuotes, bankAccounts }: { initialQuotes:
                   <button
                     onClick={() => handleDownloadPdf(quote)}
                     disabled={pdfLoadingId === quote.id}
-                    className="bg-slate-50 text-slate-500 hover:bg-slate-100 py-3 rounded-xl transition-all text-[9px] font-heading font-bold uppercase tracking-widest flex items-center justify-center gap-1.5 disabled:opacity-50"
+                    className="bg-sky-50 text-sky-700 border border-sky-200 hover:bg-sky-100 py-3 rounded-xl transition-all text-[9px] font-heading font-bold uppercase tracking-widest flex items-center justify-center gap-1.5 disabled:opacity-50"
                   >
                     <Download className="w-3 h-3" /> {pdfLoadingId === quote.id ? "Gerando..." : "PDF"}
                   </button>
                   <button
                     onClick={() => handleDelete(quote)}
-                    className="bg-slate-50 text-slate-400 hover:bg-rose-50 hover:text-rose-600 py-3 rounded-xl transition-all text-[9px] font-heading font-bold uppercase tracking-widest flex items-center justify-center gap-1.5"
+                    className="bg-white text-rose-600 border border-rose-200 hover:bg-rose-600 hover:text-white py-3 rounded-xl transition-all text-[9px] font-heading font-bold uppercase tracking-widest flex items-center justify-center gap-1.5"
                   >
                     <Trash2 className="w-3 h-3" /> Excluir
                   </button>

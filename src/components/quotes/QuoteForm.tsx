@@ -42,6 +42,9 @@ interface QuoteItem {
   notes?: string;
 }
 
+// Formato brasileiro: 1.234,56
+const brl = (n: number) => Number(n || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
 export function QuoteForm({ 
   initialProducts, 
   initialAccessories, 
@@ -473,7 +476,7 @@ export function QuoteForm({
                             }}
                           >
                             <span className="font-bold">{p.name}</span>
-                            <div className="text-xs text-slate-500 mt-0.5">R$ {Number(p.sale_price).toFixed(2)}/{p.cost_unit}</div>
+                            <div className="text-xs text-slate-500 mt-0.5">R$ {brl(Number(p.sale_price))}/{p.cost_unit}</div>
                           </div>
                         ))
                     )}
@@ -544,11 +547,11 @@ export function QuoteForm({
               <div className="flex items-center gap-3">
                 <div className="w-2 h-2 bg-vibrant-cyan rounded-full animate-pulse" />
                 <span className="text-sm font-comfortaa text-vibrant-cyan">
-                  Área Total: <span className="font-bold">{(Number(width) * Number(height) * quantity).toFixed(2)} m²</span>
+                  Área Total: <span className="font-bold">{brl((Number(width) * Number(height) * quantity))} m²</span>
                 </span>
               </div>
               <span className="text-[10px] font-barlow-condensed font-bold text-vibrant-cyan/60 uppercase tracking-widest">
-                ({(Number(width) * Number(height)).toFixed(2)} m² un. x {quantity})
+                ({brl((Number(width) * Number(height)))} m² un. x {quantity})
               </span>
             </div>
           )}
@@ -634,7 +637,7 @@ export function QuoteForm({
                         {acc.name}
                       </div>
                       <div className="text-[10px] font-barlow-condensed font-bold text-slate-500 uppercase tracking-widest">
-                        R$ {Number(acc.sale_price).toFixed(2)}/{acc.cost_unit}
+                        R$ {brl(Number(acc.sale_price))}/{acc.cost_unit}
                       </div>
                     </div>
                   </label>
@@ -667,7 +670,7 @@ export function QuoteForm({
         {/* PAGAMENTO E DESCONTO */}
         <div className="card-premium p-8">
           <h3 className="text-xl font-barlow-condensed font-bold text-white uppercase tracking-wider mb-6 flex items-center gap-3">
-            <div className="w-1.5 h-6 bg-sage-green rounded-full" />
+            <div className="w-1.5 h-6 bg-emerald-400 rounded-full" />
             Pagamento e Descontos
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -843,14 +846,14 @@ export function QuoteForm({
                       <span className="text-[8px] font-heading font-bold text-slate-400 uppercase tracking-widest mb-1">Preço Un.</span>
                       <span className="text-sm font-heading font-bold text-slate-500">
                         <span className="text-[10px] opacity-40 mr-1">R$</span>
-                        {(item.salePriceTotal / item.quantity).toFixed(2)}
+                        {brl((item.salePriceTotal / item.quantity))}
                       </span>
                     </div>
                     <div className="text-right flex flex-col">
                       <span className="text-[8px] font-heading font-bold text-primary uppercase tracking-widest mb-1">Total do Item</span>
                       <span className="text-2xl font-heading font-bold text-primary">
                         <span className="text-xs font-normal text-vibrant-cyan mr-1">R$</span>
-                        {item.salePriceTotal.toFixed(2)}
+                        {brl(item.salePriceTotal)}
                       </span>
                     </div>
                   </div>
@@ -863,11 +866,11 @@ export function QuoteForm({
           <div className="mt-8 pt-6 border-t border-border space-y-3">
             <div className="flex justify-between items-center text-xs font-comfortaa text-slate-500">
               <span>Área Total</span>
-              <span className="text-primary font-bold">{globalAreaM2.toFixed(2)} m²</span>
+              <span className="text-primary font-bold">{brl(globalAreaM2)} m²</span>
             </div>
             <div className="flex justify-between items-center text-xs font-comfortaa text-slate-500">
               <span>Subtotal Bruto</span>
-              <span className="text-primary font-bold">R$ {rawGlobalSalePrice.toFixed(2)}</span>
+              <span className="text-primary font-bold">R$ {brl(rawGlobalSalePrice)}</span>
             </div>
             {totalDiscount > 0 && (
               <div className="flex justify-between items-center text-xs font-comfortaa text-emerald-600 font-bold">
@@ -875,7 +878,7 @@ export function QuoteForm({
                   <div className="w-1 h-1 rounded-full bg-emerald-600" />
                   Desconto Aplicado
                 </span>
-                <span>- R$ {totalDiscount.toFixed(2)}</span>
+                <span>- R$ {brl(totalDiscount)}</span>
               </div>
             )}
             
@@ -888,13 +891,13 @@ export function QuoteForm({
               <div className="space-y-3">
                 <div className="flex justify-between items-center text-xs font-comfortaa">
                   <span className="text-slate-500">Custo Total (Fábrica)</span>
-                  <span className="text-slate-900 font-bold">R$ {globalSupplierCost.toFixed(2)}</span>
+                  <span className="text-slate-900 font-bold">R$ {brl(globalSupplierCost)}</span>
                 </div>
                 
                 <div className="flex justify-between items-center text-xs font-comfortaa">
                   <span className="text-slate-500">Lucro Bruto Estimado</span>
                   <div className="flex items-center gap-3">
-                    <span className="text-emerald-600 font-bold">R$ {globalProfit.toFixed(2)}</span>
+                    <span className="text-emerald-600 font-bold">R$ {brl(globalProfit)}</span>
                     <span className="text-[9px] font-heading font-bold bg-emerald-50 text-emerald-600 px-2 py-1 rounded-lg border border-emerald-100">
                       +{globalSupplierCost > 0 ? ((globalProfit / globalSupplierCost) * 100).toFixed(1) : 100}%
                     </span>
@@ -908,7 +911,7 @@ export function QuoteForm({
               <span className="text-[10px] font-heading font-bold text-vibrant-cyan uppercase tracking-[0.3em] relative z-10">Investimento Total</span>
               <div className="text-5xl font-heading font-bold text-white flex items-baseline gap-2 relative z-10">
                 <span className="text-xl font-normal text-vibrant-cyan">R$</span>
-                {globalSalePrice.toFixed(2)}
+                {brl(globalSalePrice)}
               </div>
               <div className="absolute -bottom-6 -right-6 opacity-5 group-hover:opacity-10 transition-opacity">
                 <Calculator className="w-32 h-32 text-white" />
@@ -917,14 +920,14 @@ export function QuoteForm({
 
             {paymentMethod === 'credito' && installments > 1 && (
               <p className="text-center text-[10px] font-comfortaa text-slate-500">
-                ou <span className="text-white font-bold">{installments}x</span> de <span className="text-vibrant-cyan font-bold">R$ {(globalSalePrice / installments).toFixed(2)}</span> sem juros
+                ou <span className="text-white font-bold">{installments}x</span> de <span className="text-vibrant-cyan font-bold">R$ {brl((globalSalePrice / installments))}</span> sem juros
               </p>
             )}
 
             <div className="pt-6 space-y-3">
               {savedQuoteId ? (
                 <div className="space-y-4">
-                  <div className="bg-sage-green/10 border border-sage-green/30 p-4 rounded-xl flex items-center justify-center gap-3 text-sage-green font-barlow-condensed font-bold uppercase tracking-widest text-sm">
+                  <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-xl flex items-center justify-center gap-3 text-emerald-700 font-barlow-condensed font-bold uppercase tracking-widest text-sm">
                     <CheckCircle className="w-6 h-6"/>
                     {initialQuote?.id ? "Alterações Salvas" : "Orçamento Finalizado"}
                   </div>
