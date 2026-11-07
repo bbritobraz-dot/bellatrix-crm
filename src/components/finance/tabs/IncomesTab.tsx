@@ -85,7 +85,7 @@ export function IncomesTab({ payments, setPayments, bankAccounts }: {
   const [desc, setDesc] = useState("");
   const [amount, setAmount] = useState<number | "">("");
   const [method, setMethod] = useState("pix");
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const [date, setDate] = useState(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; });
   const [bankAccountId, setBankAccountId] = useState("");
   const [installments, setInstallments] = useState<number>(1);
 
@@ -96,6 +96,7 @@ export function IncomesTab({ payments, setPayments, bankAccounts }: {
       amount: Number(amount), payment_method: method,
       is_manual: true, manual_description: desc,
       bank_account_id: bankAccountId,
+      payment_date: date,
       installments: method === 'Cartão de Crédito' ? installments : undefined,
     });
     if (res.success) {

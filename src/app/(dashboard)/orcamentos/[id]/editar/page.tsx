@@ -36,6 +36,10 @@ export default async function EditarOrcamentoPage({
           sale_price_total,
           margin_percent,
           notes,
+          color,
+          command_side,
+          command_height_m,
+          ambient,
           quote_item_accessories(
             id,
             accessory_id,

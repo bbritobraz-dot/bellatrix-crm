@@ -1,7 +1,7 @@
 "use server";
 
 import { createAuthedClient } from "@/lib/supabase/server";
-import { adjustBankBalance, getOrCreateExpenseCategoryId } from "@/lib/finance/helpers";
+import { revalidatePath } from "next/cache";
 
 const onlyDigits = (value?: string) => (value || "").replace(/\D/g, "");
 
@@ -57,7 +57,11 @@ async function insertQuoteItems(supabase: any, quoteId: string, items: any[]): P
           supplier_cost_total: item.supplierCostTotal,
           sale_price_total: item.salePriceTotal,
           margin_percent: item.marginPercent,
-          notes: item.notes || ''
+          notes: item.notes || '',
+          color: item.color || null,
+          command_side: item.commandSide || null,
+          command_height_m: item.commandHeight !== undefined && item.commandHeight !== '' ? Number(item.commandHeight) : null,
+          ambient: item.ambient?.trim() || null
         })
         .select('id')
         .single();
@@ -236,14 +240,25 @@ export async function getQuotes(statusFilters?: string[]) {
       quote_items(
         id,
         product_id,
-        product:products(name, line),
+        product:products(name, line, cost_unit, supplier_cost),
         width_m,
         height_m,
         quantity,
         charged_area_m2,
         supplier_cost_total,
         sale_price_total,
-        notes
+        margin_percent,
+        notes,
+        color,
+        command_side,
+        command_height_m,
+        ambient,
+        quote_item_accessories(
+          quantity,
+          supplier_cost_total,
+          sale_price_total,
+          accessory:accessories(name, slug, cost_unit)
+        )
       )
     `);
 
@@ -296,71 +311,49 @@ export async function moveToProduction(id: string, supplierData?: {
   const forecastDate = addBusinessDays(now, 10); // 10 dias úteis para entrega
   const supplierDeadline = addBusinessDays(now, 10); // prazo de pagamento ao fornecedor
 
-  const updatePayload: any = {
-    status: 'em_producao',
-    production_start_date: now.toISOString(),
-    delivery_forecast_date: forecastDate.toISOString(),
-    supplier_payment_deadline: supplierDeadline.toISOString(),
-  };
-
-  if (supplierData) {
-    updatePayload.supplier_cost_total = supplierData.supplierCostTotal;
-    updatePayload.supplier_paid = supplierData.supplierPaid;
-  }
-
-  const { data: quote, error } = await supabase
-    .from('quotes')
-    .update(updatePayload)
-    .eq('id', id)
-    .select('client_id')
-    .single();
+  // Uma transação: status do pedido, cliente "fechado" e adiantamento à fábrica.
+  // O vencimento do saldo do cliente passa a ser a previsão de entrega.
+  const { error } = await supabase.rpc('move_to_production', {
+    p_quote_id: id,
+    p_forecast: forecastDate.toISOString(),
+    p_supplier_deadline: supplierDeadline.toISOString(),
+    p_supplier_cost: supplierData ? supplierData.supplierCostTotal : null,
+    p_supplier_paid: supplierData ? Number(supplierData.supplierPaid || 0) : 0,
+    p_method: supplierData?.paymentMethod || null,
+    p_bank: supplierData?.bankAccountId || null,
+  });
 
   if (error) return { success: false, error: error.message };
-
-  // Atualizar status do cliente para 'fechado'
-  if (quote?.client_id) {
-    await supabase
-      .from('clients')
-      .update({ status: 'fechado' })
-      .eq('id', quote.client_id);
-  }
-
-  // Registrar automaticamente apenas o que foi pago AGORA como despesa realizada
-  if (supplierData && supplierData.supplierPaid > 0 && supplierData.bankAccountId) {
-    const categoryId = await getOrCreateExpenseCategoryId(supabase, 'Custo de Produtos');
-
-    if (categoryId) {
-      await supabase.from('expenses').insert({
-        category_id: categoryId,
-        description: `Entrada/Sinal Fornecedor - Pedido ${id.split('-')[0].toUpperCase()}`,
-        amount: supplierData.supplierPaid,
-        date: now.toISOString(),
-        payment_method: supplierData.paymentMethod || 'a definir',
-        is_paid: true,
-        paid_date: now.toISOString(),
-        paid_amount: supplierData.supplierPaid,
-        paid_method: supplierData.paymentMethod || 'a definir',
-        bank_account_id: supplierData.bankAccountId,
-        notes: `Pagamento inicial ao fornecedor referente ao pedido ${id}. Total do custo: R$ ${supplierData.supplierCostTotal.toFixed(2)}`
-      });
-    }
-
-    // Descontar do saldo da conta (atômico), mesmo se a despesa não puder ser registrada
-    const balanceError = await adjustBankBalance(supabase, supplierData.bankAccountId, -Number(supplierData.supplierPaid));
-    if (balanceError) return { success: false, error: balanceError };
-  }
-
+  revalidatePath('/orcamentos');
+  revalidatePath('/producao');
   return { success: true };
 }
 
-export async function reopenQuote(quoteId: string) {
+/**
+ * Reabre um pedido como rascunho.
+ * reversePayments = true estorna recebimentos do cliente e pagamentos à fábrica
+ * (devolve os valores às contas); false mantém tudo que já foi pago.
+ */
+export async function reopenQuote(quoteId: string, reversePayments = false) {
   const supabase = await createAuthedClient();
-  const { error } = await supabase
-    .from('quotes')
-    .update({ status: 'rascunho' })
-    .eq('id', quoteId);
+  const { error } = await supabase.rpc('reopen_quote', {
+    p_quote_id: quoteId,
+    p_reverse_payments: reversePayments,
+  });
 
   if (error) return { success: false, error: error.message };
+  revalidatePath('/orcamentos');
+  revalidatePath('/finalizados');
+  revalidatePath('/financeiro');
+  return { success: true };
+}
+
+/** Exclui um orçamento. Bloqueado se houver pagamentos (estorne reabrindo antes). */
+export async function deleteQuote(quoteId: string) {
+  const supabase = await createAuthedClient();
+  const { error } = await supabase.rpc('delete_quote', { p_quote_id: quoteId });
+  if (error) return { success: false, error: error.message };
+  revalidatePath('/orcamentos');
   return { success: true };
 }
 
@@ -377,13 +370,16 @@ export async function updateQuoteStatus(quoteId: string, status: string) {
 
 export async function scheduleInstallation(id: string, date: string, time: string) {
   const supabase = await createAuthedClient();
+  // Horário digitado é de São Paulo; sem o fuso o banco gravava como UTC (3h de diferença)
+  const installationDate = `${date}T${time}:00-03:00`;
 
   const { error } = await supabase
     .from('quotes')
-    .update({ 
+    .update({
       status: 'pronto_para_instalacao',
-      // Horário digitado é de São Paulo; sem o fuso o banco gravava como UTC (3h de diferença)
-      installation_date: `${date}T${time}:00-03:00`
+      installation_date: installationDate,
+      // O saldo do cliente vence no dia da instalação
+      payment_due_date: installationDate
     })
     .eq('id', id);
 
@@ -391,31 +387,28 @@ export async function scheduleInstallation(id: string, date: string, time: strin
   return { success: true };
 }
 
-export async function finishOrder(id: string) {
+/**
+ * Finaliza a obra: registra o recebimento do saldo (opcional), ativa a garantia
+ * de 1 ano e move o cliente para pós-venda — tudo numa transação.
+ */
+export async function finishOrder(id: string, payment?: {
+  amount: number;
+  method: string;
+  bankAccountId: string;
+  installments?: number;
+}) {
   const supabase = await createAuthedClient();
-  const now = new Date();
-  const warrantyEndDate = new Date();
-  warrantyEndDate.setFullYear(warrantyEndDate.getFullYear() + 1); // 1 ano de garantia
-
-  const { data: quote, error } = await supabase
-    .from('quotes')
-    .update({ 
-      status: 'finalizado',
-      installation_date: now.toISOString(),
-      warranty_end_date: warrantyEndDate.toISOString()
-    })
-    .eq('id', id)
-    .select('client_id')
-    .single();
+  const { error } = await supabase.rpc('finish_order', {
+    p_quote_id: id,
+    p_amount: payment ? Number(payment.amount) : 0,
+    p_method: payment?.method || null,
+    p_bank: payment?.bankAccountId || null,
+    p_installments: payment?.installments ?? null,
+  });
 
   if (error) return { success: false, error: error.message };
-
-  // Atualizar status do cliente para 'pos_venda' (sai do kanban principal)
-  if (quote?.client_id) {
-    await supabase
-      .from('clients')
-      .update({ status: 'pos_venda' })
-      .eq('id', quote.client_id);
-  }
+  revalidatePath('/producao');
+  revalidatePath('/finalizados');
+  revalidatePath('/financeiro');
   return { success: true };
 }

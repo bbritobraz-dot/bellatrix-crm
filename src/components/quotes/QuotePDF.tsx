@@ -1,178 +1,175 @@
+/* eslint-disable jsx-a11y/alt-text -- <Image> do react-pdf não aceita alt */
 import React from 'react';
-import { Document, Page, Text, View, StyleSheet, Image, Font } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
 
-// Estilos baseados no modelo Bellatrix
+// Identidade Bellatrix
+const NAVY = '#000B1A';
+const CYAN = '#00D9E8';
+const TEAL = '#0B7A85'; // ciano escuro: legível sobre fundo branco
+const MUTED = '#64748B';
+const LINE = '#E2E8F0';
+const SOFT = '#F8FAFC';
+
 const styles = StyleSheet.create({
   page: {
-    padding: 40,
+    paddingTop: 32,
+    paddingBottom: 60, // espaço para o rodapé fixo
+    paddingHorizontal: 36,
     fontFamily: 'Helvetica',
     fontSize: 9,
-    color: '#000B1A',
-    lineHeight: 1.5,
+    color: NAVY,
+    lineHeight: 1.35,
     backgroundColor: '#FFFFFF'
   },
+
+  // Cabeçalho
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 30,
+    paddingBottom: 12,
     borderBottomWidth: 2,
-    borderBottomColor: '#00F2FF',
-    paddingBottom: 20
+    borderBottomColor: CYAN
   },
-  logo: {
-    width: 120,
-    height: 'auto'
-  },
-  companyInfo: {
-    textAlign: 'right',
-    fontSize: 8,
-    color: '#64748b'
-  },
-  companyName: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#000B1A',
-    marginBottom: 2,
-    letterSpacing: 1
-  },
-  titleSection: {
+  logo: { width: 120 },
+  companyBlock: { alignItems: 'flex-end' },
+  companyName: { fontSize: 12, fontFamily: 'Helvetica-Bold', letterSpacing: 0.5 },
+  companyLine: { fontSize: 8, color: MUTED, marginTop: 1 },
+
+  // Título
+  titleBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 25,
-    backgroundColor: '#000B1A',
-    padding: 12,
+    marginTop: 14,
+    backgroundColor: NAVY,
+    paddingVertical: 9,
+    paddingHorizontal: 12,
     borderRadius: 4
   },
-  quoteTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#00F2FF',
-    letterSpacing: 1
-  },
-  quoteMeta: {
-    fontSize: 9,
-    color: '#FFFFFF',
-    opacity: 0.8
-  },
+  title: { fontSize: 13, fontFamily: 'Helvetica-Bold', color: CYAN, letterSpacing: 1.2 },
+  titleMetaRow: { flexDirection: 'row' },
+  titleMetaBlock: { marginLeft: 18, alignItems: 'flex-end' },
+  titleMetaLabel: { fontSize: 6.5, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 0.6 },
+  titleMetaValue: { fontSize: 9, color: '#FFFFFF', fontFamily: 'Helvetica-Bold' },
+
+  // Cliente
   clientBox: {
-    marginBottom: 25,
-    padding: 15,
+    flexDirection: 'row',
+    marginTop: 10,
+    padding: 10,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: 8,
-    backgroundColor: '#F8FAFC'
+    borderColor: LINE,
+    borderRadius: 4,
+    backgroundColor: SOFT
   },
+  fieldLabel: { fontSize: 6.5, color: MUTED, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 1 },
+  fieldValue: { fontSize: 9.5 },
+
   sectionTitle: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    color: '#000B1A',
-    marginBottom: 8,
+    fontSize: 8.5,
+    fontFamily: 'Helvetica-Bold',
     textTransform: 'uppercase',
-    letterSpacing: 1,
+    letterSpacing: 0.8,
     borderLeftWidth: 3,
-    borderLeftColor: '#00F2FF',
-    paddingLeft: 8
+    borderLeftColor: CYAN,
+    paddingLeft: 6,
+    marginBottom: 6
   },
-  table: {
-    marginTop: 15,
-    borderRadius: 6,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#E2E8F0'
-  },
+
+  // Tabela
   tableHeader: {
     flexDirection: 'row',
-    backgroundColor: '#000B1A',
-    padding: 10,
+    backgroundColor: NAVY,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
     color: '#FFFFFF',
-    fontWeight: 'bold',
-    fontSize: 8,
-    letterSpacing: 0.5
+    fontFamily: 'Helvetica-Bold',
+    fontSize: 7,
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+    borderTopLeftRadius: 3,
+    borderTopRightRadius: 3
   },
-  tableRow: {
+  productRow: {
     flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
-    padding: 10,
-    alignItems: 'center',
-    minHeight: 40
+    paddingVertical: 7,
+    paddingHorizontal: 8,
+    borderTopWidth: 1,
+    borderTopColor: LINE,
+    alignItems: 'flex-start'
   },
-  colProd: { width: '30%' },
+  accessoryRow: {
+    flexDirection: 'row',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    backgroundColor: SOFT,
+    alignItems: 'flex-start'
+  },
+  colNum: { width: '5%', color: MUTED },
+  colDesc: { width: '38%', paddingRight: 6 },
   colAmb: { width: '12%', textAlign: 'center' },
-  colDim: { width: '12%', textAlign: 'center' },
-  colQtd: { width: '6%', textAlign: 'center' },
-  colMed: { width: '15%', textAlign: 'center' },
-  colUnit: { width: '8%', textAlign: 'center' },
-  colTotal: { width: '17%', textAlign: 'right' },
-  
-  itemTitle: { fontWeight: 'bold', color: '#000B1A', fontSize: 9, marginBottom: 2 },
-  itemSub: { fontSize: 7, color: '#64748b', marginTop: 1 },
-  itemCommand: { fontSize: 7, color: '#00F2FF', fontWeight: 'bold', marginTop: 1 },
-  
-  totalsContainer: {
-    marginTop: 30,
-    flexDirection: 'row',
-    justifyContent: 'flex-end'
+  colDim: { width: '15%', textAlign: 'center' },
+  colQtd: { width: '7%', textAlign: 'center' },
+  colMed: { width: '10%', textAlign: 'center' },
+  colTotal: { width: '13%', textAlign: 'right' },
+
+  itemTitle: { fontFamily: 'Helvetica-Bold', fontSize: 9 },
+  itemSub: { fontSize: 7.5, color: MUTED, marginTop: 1 },
+  itemCommand: { fontSize: 7.5, color: TEAL, fontFamily: 'Helvetica-Bold', marginTop: 1 },
+  accessoryText: { fontSize: 8, color: '#475569' },
+  cell: { fontSize: 8.5 },
+  cellBold: { fontSize: 9, fontFamily: 'Helvetica-Bold' },
+  tableBottom: { borderTopWidth: 1, borderTopColor: LINE },
+
+  // Totais + condições
+  summary: { flexDirection: 'row', marginTop: 14, justifyContent: 'space-between' },
+  infoBox: {
+    width: '56%',
+    padding: 10,
+    backgroundColor: SOFT,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: LINE
   },
-  totalsBox: {
-    width: '40%',
-    padding: 15,
-    backgroundColor: '#000B1A',
-    borderRadius: 8
-  },
-  totalRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 6,
-    fontSize: 9,
-    color: '#E2E8F0'
-  },
-  discountRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 6,
-    fontSize: 9,
-    color: '#00F2FF',
-    fontWeight: 'bold'
-  },
+  infoItem: { fontSize: 7.5, color: '#475569', marginBottom: 3 },
+  totalsBox: { width: '40%', padding: 12, backgroundColor: NAVY, borderRadius: 4, alignSelf: 'flex-start' },
+  totalRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4, fontSize: 9, color: '#CBD5E1' },
+  discountRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4, fontSize: 9, color: CYAN, fontFamily: 'Helvetica-Bold' },
   grandTotal: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 12,
-    paddingTop: 12,
+    alignItems: 'flex-end',
+    marginTop: 6,
+    paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: 'bold',
+    borderTopColor: '#334155',
     color: '#FFFFFF'
   },
-  obsSection: {
-    marginTop: 35,
-    padding: 15,
-    backgroundColor: '#F8FAFC',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E2E8F0'
-  },
-  obsItem: {
-    fontSize: 8,
-    color: '#475569',
-    marginBottom: 5,
-    lineHeight: 1.4
-  },
+  grandLabel: { fontSize: 9, fontFamily: 'Helvetica-Bold', letterSpacing: 0.6 },
+  grandValue: { fontSize: 15, fontFamily: 'Helvetica-Bold' },
+  installments: { fontSize: 7.5, color: CYAN, textAlign: 'right', marginTop: 4 },
+
+  // Assinatura
+  signature: { marginTop: 36, flexDirection: 'row', justifyContent: 'space-around' },
+  signatureBlock: { width: 190, alignItems: 'center' },
+  signatureLine: { width: '100%', borderTopWidth: 1, borderTopColor: NAVY, marginBottom: 4 },
+  signatureLabel: { fontSize: 7.5, fontFamily: 'Helvetica-Bold' },
+  signatureSub: { fontSize: 7, color: MUTED, marginTop: 1 },
+
+  // Rodapé fixo em todas as páginas
   footer: {
     position: 'absolute',
-    bottom: 30,
-    left: 40,
-    right: 40,
-    textAlign: 'center',
-    color: '#94A3B8',
-    fontSize: 7,
+    top: 842 - 40, // A4 = 842pt de altura; posicionar pelo topo é mais confiável no react-pdf
+    left: 36,
+    right: 36,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
-    paddingTop: 15
+    borderTopColor: LINE,
+    paddingTop: 6,
+    fontSize: 7,
+    color: '#94A3B8'
   }
 });
 
@@ -189,207 +186,250 @@ interface QuotePDFProps {
   date?: string;
 }
 
+// ===== Formatação pt-BR =====
+const num = (n: number, digits = 2) =>
+  Number(n || 0).toLocaleString('pt-BR', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+const money = (n: number) => `R$ ${num(n)}`;
+
+const LINE_LABELS: Record<string, string> = {
+  vertical: 'Persiana Vertical',
+  ph: 'Persiana Horizontal (PH)',
+  rolo: 'Rolô',
+  romana: 'Romana',
+  painel: 'Painel',
+};
+
+const UNIT_LABELS: Record<string, string> = { m2: 'm²', linear_m: 'm', m: 'm', unit: 'un', unid: 'un' };
+
+const AMBIENTS = ['Sala', 'Quarto', 'Suíte', 'Cozinha', 'Escritório', 'Banheiro', 'Varanda', 'Closet', 'Lavanderia', 'Área', 'Copa', 'Jantar', 'Estar'];
+function guessAmbient(notes?: string): string {
+  if (!notes) return '—';
+  const found = AMBIENTS.find(a => notes.toLowerCase().includes(a.toLowerCase()));
+  return found || '—';
+}
+
+const PAYMENT_LABELS: Record<string, string> = {
+  vista: 'À vista',
+  pix: 'Pix',
+  dinheiro: 'Dinheiro',
+  credito: 'Cartão de crédito',
+  debito: 'Cartão de débito',
+  boleto: 'Boleto',
+};
+
+type Row = {
+  description: string;
+  details: string[];
+  command?: string;
+  ambient: string;
+  dims: string;
+  quantity: number;
+  measure: string;
+  total: number;
+  accessories: { description: string; quantity: number; measure: string; total: number }[];
+};
+
 export const QuotePDF = ({ data }: { data: QuotePDFProps }) => {
-  const quoteDate = data.date || new Date().toLocaleDateString('pt-BR');
+  const quoteDate = data.date || new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
   const quoteNumber = data.quoteId ? data.quoteId.split('-')[0].toUpperCase() : 'NOVO';
 
-  // Achatar itens e acessórios em uma única lista para a tabela
-  const flattenedRows: any[] = [];
-  data.items.forEach((item) => {
+  const rows: Row[] = data.items.map((item) => {
+    const itemQty = Math.max(Number(item.quantity) || 1, 1);
     const unit = item.product?.cost_unit || 'm2';
-    const totalMeasure = unit === 'm2' 
-      ? (item.width * item.height * item.quantity) 
-      : (item.width * item.quantity);
 
-    const accessoriesTotal = item.accessories?.reduce((acc: number, curr: any) => {
-      const price = curr.sale_price_total || (Number(curr.salePrice || 0) * Number(curr.quantity || 1));
-      return acc + price;
-    }, 0) || 0;
-    
-    const productOnlyTotal = item.salePriceTotal - accessoriesTotal;
-
-    // Linha do Produto Principal (Persiana pura)
-    flattenedRows.push({
-      type: 'product',
-      description: `${item.product.line?.toUpperCase() || ''} ${item.product.name}`,
-      color: item.color,
-      // CAPTURANDO OS DADOS DE COMANDO DIRETAMENTE DO ITEM
-      command: item.commandSide ? `${item.commandSide.toUpperCase()} (${item.commandHeight ? item.commandHeight + 'm' : '-'})` : 'N/A',
-      ambient: item.notes?.includes('Sala') ? 'SALA' : item.notes?.includes('Quarto') ? 'QUARTO' : 'GERAL',
-      width: item.width,
-      height: unit === 'm2' ? item.height : null,
-      quantity: item.quantity,
-      totalMeasure: totalMeasure,
-      unit: unit,
-      total: productOnlyTotal,
-      notes: item.notes
+    // Mesmo cálculo do formulário: venda do acessório = preço x qtd do acessório x qtd de peças
+    const accessories = (item.accessories || []).map((acc: any) => {
+      const accQty = Math.max(Number(acc.quantity) || 1, 1) * itemQty;
+      const total = acc.sale_price_total != null
+        ? Number(acc.sale_price_total)
+        : Number(acc.salePrice || 0) * accQty;
+      const accUnit = UNIT_LABELS[acc.accessory?.cost_unit] || 'un';
+      const charged = Number(acc.charged || 0);
+      const measure = accUnit === 'un' ? `${accQty} un` : charged > 0 ? `${num(charged * accQty)} ${accUnit}` : '—';
+      return { description: acc.accessory?.name || 'Acessório', quantity: accQty, measure, total };
     });
 
-    // Linhas para Acessórios
-    if (item.accessories && item.accessories.length > 0) {
-      item.accessories.forEach((acc: any) => {
-        const accUnitRaw = acc.accessory.cost_unit || 'unid';
-        const accQty = acc.quantity || item.quantity;
-        const accPriceTotal = acc.sale_price_total || (Number(acc.salePrice || 0) * Number(acc.quantity || 1));
-        
-        // Padronização da unidade para exibição
-        const displayUnit = accUnitRaw === 'linear_m' || accUnitRaw === 'm' ? 'm' : accUnitRaw === 'm2' ? 'm2' : 'unid';
-        
-        // Cálculo da medida real do acessório para exibição (Prioridade para largura se for linear)
-        let accMeasure = acc.charged || 0;
-        if (displayUnit === 'm') {
-          accMeasure = item.width * accQty;
-        } else if (!acc.charged) {
-          if (displayUnit === 'm2') accMeasure = item.width * item.height * accQty;
-          else accMeasure = accQty;
-        }
+    const accessoriesTotal = accessories.reduce((s: number, a: { total: number }) => s + a.total, 0);
 
-        flattenedRows.push({
-          type: 'accessory',
-          description: `ACESSÓRIO: ${acc.accessory.name}`,
-          color: null,
-          command: null,
-          ambient: '-',
-          width: displayUnit === 'm' || displayUnit === 'm2' ? item.width : null,
-          height: displayUnit === 'm2' ? item.height : null,
-          quantity: accQty,
-          totalMeasure: accMeasure,
-          unit: displayUnit,
-          total: accPriceTotal
-        });
-      });
-    }
+    // Medida cobrada (já com a metragem mínima), não só L x A
+    const chargedPerPiece = Number(item.chargedArea) || (unit === 'm2' ? item.width * item.height : item.width);
+    const measure = unit === 'unit' ? `${itemQty} un` : `${num(chargedPerPiece * itemQty)} ${UNIT_LABELS[unit] || 'm²'}`;
+
+    const lineLabel = LINE_LABELS[item.product?.line] || (item.product?.line || '').toUpperCase();
+    const side = item.commandSide ? String(item.commandSide).toLowerCase() : '';
+    const command = side
+      ? `Comando ${side}${item.commandHeight ? ` · altura ${num(Number(item.commandHeight))} m` : ''}`
+      : undefined;
+
+    const details: string[] = [];
+    if (lineLabel) details.push(lineLabel);
+    if (item.color) details.push(`Cor: ${item.color}`);
+
+    return {
+      description: item.product?.name || 'Produto',
+      details,
+      command,
+      ambient: item.ambient ? String(item.ambient) : guessAmbient(item.notes),
+      dims: unit === 'm2' ? `${num(item.width)} × ${num(item.height)} m` : `${num(item.width)} m`,
+      quantity: itemQty,
+      measure,
+      total: Number(item.salePriceTotal || 0) - accessoriesTotal,
+      accessories,
+      notes: item.notes,
+    } as Row & { notes?: string };
   });
 
+  const subtotal = data.globalSalePrice + data.totalDiscount;
+  const paymentLabel = PAYMENT_LABELS[data.paymentMethod] || data.paymentMethod;
+
   return (
-    <Document>
+    <Document title={`Orçamento ${quoteNumber} - ${data.clientName}`} author="Persianas Bellatrix">
       <Page size="A4" style={styles.page}>
-        
-        {/* CABEÇALHO TRIPARTIDO */}
+        {/* RODAPÉ */}
+        <View style={styles.footer} fixed>
+          <Text>Persianas Bellatrix · Orçamento #{quoteNumber} · {quoteDate}</Text>
+          <Text render={({ pageNumber, totalPages }) => `Página ${pageNumber} de ${totalPages}`} />
+        </View>
+
+
+        {/* CABEÇALHO */}
         <View style={styles.header}>
-          <View style={{ width: '30%' }}>
-            <Image src="/logo.png" style={styles.logo} />
-          </View>
-          <View style={{ width: '40%', textAlign: 'center' }}>
+          <Image src="/logo.png" style={styles.logo} />
+          <View style={styles.companyBlock}>
             <Text style={styles.companyName}>Persianas Bellatrix</Text>
-            <Text style={{ fontSize: 8, color: '#64748b' }}>CNPJ: 47.214.728/0001-80</Text>
-            <Text style={{ fontSize: 8, color: '#64748b', marginTop: 2 }}>Foz do Iguaçu - PR</Text>
-          </View>
-          <View style={{ width: '30%', textAlign: 'right' }}>
-            <Text style={{ fontSize: 8, color: '#64748b' }}>bellatrixpersianas@gmail.com</Text>
-            <Text style={{ fontSize: 8, color: '#64748b', marginTop: 2 }}>+55 45 98808 9137</Text>
+            <Text style={styles.companyLine}>CNPJ 47.214.728/0001-80 · Foz do Iguaçu - PR</Text>
+            <Text style={styles.companyLine}>+55 45 98808-9137 · bellatrixpersianas@gmail.com</Text>
           </View>
         </View>
 
-        {/* FAIXA TITULO UNIFICADA */}
-        <View style={styles.titleSection}>
-          <Text style={styles.quoteTitle}>ORÇAMENTO DE PROJETO</Text>
-          <View style={{ textAlign: 'right' }}>
-            <Text style={styles.quoteMeta}>Referência: #{quoteNumber}</Text>
-            <Text style={[styles.quoteMeta, { marginTop: 2 }]}>Emitido em: {quoteDate}</Text>
+        {/* TÍTULO */}
+        <View style={styles.titleBar}>
+          <Text style={styles.title}>ORÇAMENTO</Text>
+          <View style={styles.titleMetaRow}>
+            <View style={styles.titleMetaBlock}>
+              <Text style={styles.titleMetaLabel}>Nº</Text>
+              <Text style={styles.titleMetaValue}>#{quoteNumber}</Text>
+            </View>
+            <View style={styles.titleMetaBlock}>
+              <Text style={styles.titleMetaLabel}>Emissão</Text>
+              <Text style={styles.titleMetaValue}>{quoteDate}</Text>
+            </View>
+            <View style={styles.titleMetaBlock}>
+              <Text style={styles.titleMetaLabel}>Validade</Text>
+              <Text style={styles.titleMetaValue}>10 dias</Text>
+            </View>
           </View>
         </View>
 
         {/* CLIENTE */}
         <View style={styles.clientBox}>
-          <Text style={styles.sectionTitle}>Dados do Cliente</Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 5 }}>
-            <View style={{ width: '50%', marginBottom: 5 }}>
-              <Text style={{ fontSize: 7, color: '#64748b', textTransform: 'uppercase' }}>Nome</Text>
-              <Text style={{ fontSize: 10, fontWeight: 'bold', color: '#000B1A' }}>{data.clientName}</Text>
-            </View>
-            <View style={{ width: '50%', marginBottom: 5 }}>
-              <Text style={{ fontSize: 7, color: '#64748b', textTransform: 'uppercase' }}>Telefone</Text>
-              <Text style={{ fontSize: 10, color: '#000B1A' }}>{data.clientPhone || '-'}</Text>
-            </View>
-            <View style={{ width: '100%' }}>
-              <Text style={{ fontSize: 7, color: '#64748b', textTransform: 'uppercase' }}>Endereço de Instalação</Text>
-              <Text style={{ fontSize: 10, color: '#000B1A' }}>{data.clientAddress || '-'}</Text>
-            </View>
+          <View style={{ width: '38%', paddingRight: 8 }}>
+            <Text style={styles.fieldLabel}>Cliente</Text>
+            <Text style={[styles.fieldValue, { fontFamily: 'Helvetica-Bold' }]}>{data.clientName || '—'}</Text>
+          </View>
+          <View style={{ width: '20%', paddingRight: 8 }}>
+            <Text style={styles.fieldLabel}>Telefone</Text>
+            <Text style={styles.fieldValue}>{data.clientPhone || '—'}</Text>
+          </View>
+          <View style={{ width: '42%' }}>
+            <Text style={styles.fieldLabel}>Endereço de instalação</Text>
+            <Text style={styles.fieldValue}>{data.clientAddress || '—'}</Text>
           </View>
         </View>
 
         {/* TABELA */}
-        <View style={styles.table}>
-          <View style={styles.tableHeader}>
-            <Text style={styles.colProd}>Descrição do Produto</Text>
+        <View style={{ marginTop: 14 }}>
+          {/* Cabeçalho da tabela repete em cada página */}
+          <View style={styles.tableHeader} fixed>
+            <Text style={styles.colNum}>#</Text>
+            <Text style={styles.colDesc}>Produto</Text>
             <Text style={styles.colAmb}>Ambiente</Text>
-            <Text style={styles.colDim}>Dimensões (L x A)</Text>
+            <Text style={styles.colDim}>Largura × Altura</Text>
             <Text style={styles.colQtd}>Qtd</Text>
-            <Text style={styles.colMed}>Medida Total</Text>
-            <Text style={styles.colUnit}>Unid</Text>
-            <Text style={styles.colTotal}>Investimento</Text>
+            <Text style={styles.colMed}>Medida</Text>
+            <Text style={styles.colTotal}>Valor</Text>
           </View>
 
-          {flattenedRows.map((row, i) => (
-            <View style={[styles.tableRow, row.type === 'accessory' ? { backgroundColor: '#F8FAFC' } : {}]} key={i}>
-              <View style={styles.colProd}>
-                <Text style={[styles.itemTitle, row.type === 'accessory' ? { color: '#64748b', fontSize: 8 } : {}]}>{row.description}</Text>
-                {row.color && <Text style={styles.itemSub}>Cor: {row.color}</Text>}
-                {row.command && row.command !== 'N/A' && <Text style={styles.itemCommand}>Comando: {row.command}</Text>}
-                {row.notes && <Text style={styles.itemSub}>Obs: {row.notes}</Text>}
+          {rows.map((row, i) => (
+            // wrap={false}: um item e seus acessórios nunca são cortados entre páginas
+            <View key={i} wrap={false}>
+              <View style={styles.productRow}>
+                <Text style={[styles.colNum, styles.cell]}>{String(i + 1).padStart(2, '0')}</Text>
+                <View style={styles.colDesc}>
+                  <Text style={styles.itemTitle}>{row.description}</Text>
+                  {row.details.length > 0 && <Text style={styles.itemSub}>{row.details.join(' · ')}</Text>}
+                  {row.command && <Text style={styles.itemCommand}>{row.command}</Text>}
+                  {(row as any).notes ? <Text style={styles.itemSub}>Obs.: {(row as any).notes}</Text> : null}
+                </View>
+                <Text style={[styles.colAmb, styles.cell]}>{row.ambient}</Text>
+                <Text style={[styles.colDim, styles.cell]}>{row.dims}</Text>
+                <Text style={[styles.colQtd, styles.cell]}>{row.quantity}</Text>
+                <Text style={[styles.colMed, styles.cell]}>{row.measure}</Text>
+                <Text style={[styles.colTotal, styles.cellBold]}>{money(row.total)}</Text>
               </View>
-              <View style={styles.colAmb}><Text style={{ fontSize: 8 }}>{row.ambient}</Text></View>
-              <View style={styles.colDim}>
-                <Text style={{ fontSize: 8 }}>
-                  {row.width ? row.width.toFixed(2) + 'm' : '-'} 
-                  {row.height ? ' x ' + row.height.toFixed(2) + 'm' : ''}
-                </Text>
-              </View>
-              <View style={styles.colQtd}><Text>{row.quantity}</Text></View>
-              <View style={styles.colMed}><Text style={{ fontWeight: 'bold' }}>{row.totalMeasure.toFixed(3)}</Text></View>
-              <View style={styles.colUnit}><Text>{row.unit}</Text></View>
-              <View style={styles.colTotal}><Text style={{ fontWeight: 'bold' }}>R$ {row.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</Text></View>
+
+              {row.accessories.map((acc, j) => (
+                <View key={j} style={styles.accessoryRow}>
+                  <Text style={styles.colNum}></Text>
+                  <Text style={[styles.colDesc, styles.accessoryText]}>+ {acc.description}</Text>
+                  <Text style={[styles.colAmb, styles.accessoryText]}></Text>
+                  <Text style={[styles.colDim, styles.accessoryText]}></Text>
+                  <Text style={[styles.colQtd, styles.accessoryText]}>{acc.quantity}</Text>
+                  <Text style={[styles.colMed, styles.accessoryText]}>{acc.measure}</Text>
+                  <Text style={[styles.colTotal, styles.accessoryText]}>{money(acc.total)}</Text>
+                </View>
+              ))}
             </View>
           ))}
+          <View style={styles.tableBottom} />
         </View>
 
-        {/* TOTAIS */}
-        <View style={styles.totalsContainer}>
+        {/* CONDIÇÕES + TOTAIS */}
+        <View style={styles.summary} wrap={false}>
+          <View style={styles.infoBox}>
+            <Text style={styles.sectionTitle}>Condições</Text>
+            <Text style={styles.infoItem}>• Pagamento escolhido: {paymentLabel}{data.paymentMethod === 'credito' && data.installments > 1 ? ` em ${data.installments}x` : ''}.</Text>
+            <Text style={styles.infoItem}>• Aceitamos Pix, dinheiro e cartão: 50% de entrada e 50% na entrega, ou até 12x sem juros no cartão.</Text>
+            <Text style={styles.infoItem}>• Metragem mínima cobrada por peça: 1,20 m² (1,50 m² nas persianas verticais).</Text>
+            <Text style={styles.infoItem}>• Garantia de 12 meses contra defeitos de fabricação.</Text>
+            <Text style={styles.infoItem}>• Prazo de entrega estimado: 15 a 20 dias úteis após a confirmação do pedido.</Text>
+          </View>
+
           <View style={styles.totalsBox}>
             <View style={styles.totalRow}>
-              <Text>Subtotal:</Text>
-              <Text>R$ {(data.globalSalePrice + data.totalDiscount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</Text>
+              <Text>Subtotal</Text>
+              <Text>{money(subtotal)}</Text>
             </View>
             {data.totalDiscount > 0 && (
               <View style={styles.discountRow}>
-                <Text>Desconto Especial:</Text>
-                <Text>- R$ {data.totalDiscount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</Text>
+                <Text>Desconto</Text>
+                <Text>- {money(data.totalDiscount)}</Text>
               </View>
             )}
             <View style={styles.grandTotal}>
-              <Text>TOTAL FINAL:</Text>
-              <Text>R$ {data.globalSalePrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</Text>
+              <Text style={styles.grandLabel}>TOTAL</Text>
+              <Text style={styles.grandValue}>{money(data.globalSalePrice)}</Text>
             </View>
             {data.paymentMethod === 'credito' && data.installments > 1 && (
-              <Text style={{ fontSize: 7, color: '#00F2FF', textAlign: 'right', marginTop: 5, opacity: 0.8 }}>
-                Parcelado em {data.installments}x de R$ {(data.globalSalePrice / data.installments).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} sem juros
+              <Text style={styles.installments}>
+                ou {data.installments}x de {money(data.globalSalePrice / data.installments)} sem juros
               </Text>
             )}
           </View>
         </View>
 
-        {/* INFORMAÇÕES GERAIS */}
-        <View style={styles.obsSection}>
-          <Text style={styles.sectionTitle}>Informações Gerais</Text>
-          <Text style={styles.obsItem}>• Formas de Pagamento: Cartão de Crédito, Dinheiro, Pix.</Text>
-          <Text style={styles.obsItem}>• Condições: 50% entrada e 50% na entrega ou parcelamento em até 12x sem juros.</Text>
-          <Text style={styles.obsItem}>• Regras Comerciais: Cobrado metragem quadrada mínima de 1.20 m² por peça.</Text>
-          <Text style={styles.obsItem}>• Garantia: 12 meses contra defeitos de fabricação.</Text>
-          <Text style={styles.obsItem}>• Prazo de Entrega Estimado: 15 a 20 dias úteis após confirmação do pedido.</Text>
-        </View>
-
-        {/* ASSINATURA */}
-        <View style={{ marginTop: 40, alignItems: 'center' }}>
-          <View style={{ width: 180, borderTopWidth: 1, borderTopColor: '#000B1A', marginTop: 2, marginBottom: 5 }} />
-          <Text style={{ fontSize: 8, color: '#000B1A', fontWeight: 'bold' }}>RESPONSÁVEL BELLATRIX</Text>
-          <Text style={{ fontSize: 7, color: '#64748b', marginTop: 2 }}>Este documento tem validade de 10 dias.</Text>
-        </View>
-
-        {/* RODAPÉ */}
-        <View style={styles.footer}>
-          <Text style={{ fontWeight: 'bold', color: '#000B1A' }}>Bellatrix Persianas - Excelência em Design e Conforto</Text>
-          <Text style={{ marginTop: 4 }}>{data.clientName} | {quoteDate} | Foz do Iguaçu - PR</Text>
+        {/* ASSINATURAS */}
+        <View style={styles.signature} wrap={false}>
+          <View style={styles.signatureBlock}>
+            <View style={styles.signatureLine} />
+            <Text style={styles.signatureLabel}>PERSIANAS BELLATRIX</Text>
+            <Text style={styles.signatureSub}>Responsável</Text>
+          </View>
+          <View style={styles.signatureBlock}>
+            <View style={styles.signatureLine} />
+            <Text style={styles.signatureLabel}>{(data.clientName || 'CLIENTE').toUpperCase()}</Text>
+            <Text style={styles.signatureSub}>De acordo</Text>
+          </View>
         </View>
 
       </Page>

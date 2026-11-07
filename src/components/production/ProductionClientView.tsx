@@ -1,10 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Search, AlertCircle, Clock, CheckCircle, DollarSign } from "lucide-react";
+import { Search, AlertCircle, Clock, CheckCircle, DollarSign, Factory, RotateCcw } from "lucide-react";
+import { downloadFactoryOrderPdf } from "@/lib/quotes/pdfData";
+import { ReopenQuoteDialog } from "@/components/quotes/ReopenQuoteDialog";
 import { PaymentModal } from "./modals/PaymentModal";
 import { FinishModal } from "./modals/FinishModal";
 import { ScheduleModal } from "./modals/ScheduleModal";
+import { timeOfDay } from "@/lib/dates";
 
 export function ProductionClientView({
   initialQuotes, bankAccounts
@@ -20,6 +23,19 @@ export function ProductionClientView({
   const [payQuote, setPayQuote] = useState<any | null>(null);
   const [finishQuote, setFinishQuote] = useState<any | null>(null);
   const [scheduleQuote, setScheduleQuote] = useState<any | null>(null);
+  const [reopenQuoteTarget, setReopenQuoteTarget] = useState<any | null>(null);
+  const [factoryLoadingId, setFactoryLoadingId] = useState<string | null>(null);
+
+  const handleFactoryOrder = async (quote: any) => {
+    setFactoryLoadingId(quote.id);
+    try {
+      await downloadFactoryOrderPdf(quote);
+    } catch (e: any) {
+      alert("Erro ao gerar pedido de fábrica: " + (e?.message || "tente novamente"));
+    } finally {
+      setFactoryLoadingId(null);
+    }
+  };
 
   const filteredQuotes = quotes.filter(q =>
     (q.client?.name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -40,7 +56,7 @@ export function ProductionClientView({
 
   const handleScheduleSuccess = (quoteId: string, date: string, time: string) => {
     setQuotes(prev => prev.map(q => q.id === quoteId 
-      ? { ...q, status: "pronto_para_instalacao", installation_date: `${date}T${time}:00` } 
+      ? { ...q, status: "pronto_para_instalacao", installation_date: `${date}T${time}:00-03:00` } 
       : q
     ));
   };
@@ -148,7 +164,7 @@ export function ProductionClientView({
                         </div>
                         {activeTab === "producao" 
                           ? new Date(quote.production_start_date).toLocaleDateString("pt-BR")
-                          : new Date(quote.installation_date).toLocaleDateString("pt-BR") + " " + new Date(quote.installation_date).toLocaleTimeString("pt-BR", {hour: '2-digit', minute:'2-digit'})}
+                          : new Date(quote.installation_date).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" }) + " " + timeOfDay(quote.installation_date)}
                       </div>
                     </td>
                     <td className="px-8 py-6" data-label="Prazo">
@@ -176,7 +192,22 @@ export function ProductionClientView({
                       </div>
                     </td>
                     <td className="px-8 py-6 text-right" data-label="Ações">
-                      <div className="flex gap-2 justify-end">
+                      <div className="flex gap-2 justify-end flex-wrap">
+                        <button
+                          onClick={() => handleFactoryOrder(quote)}
+                          disabled={factoryLoadingId === quote.id}
+                          title="Baixar pedido de produção para a fábrica"
+                          className="bg-white text-slate-600 border border-slate-200 hover:border-primary px-4 py-3 rounded-2xl text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 active:scale-95 disabled:opacity-50"
+                        >
+                          <Factory className="w-3 h-3" /> {factoryLoadingId === quote.id ? "Gerando..." : "Pedido fábrica"}
+                        </button>
+                        <button
+                          onClick={() => setReopenQuoteTarget(quote)}
+                          title="Reabrir como rascunho"
+                          className="bg-white text-slate-400 border border-slate-200 hover:text-primary hover:border-primary px-3 py-3 rounded-2xl transition-all active:scale-95"
+                        >
+                          <RotateCcw className="w-3 h-3" />
+                        </button>
                         {!isFullyPaid && (
                           <button
                             onClick={() => setPayQuote(quote)}
@@ -219,6 +250,13 @@ export function ProductionClientView({
       </div>
 
       {/* Modals Rendering */}
+      {reopenQuoteTarget && (
+        <ReopenQuoteDialog
+          quote={reopenQuoteTarget}
+          onClose={() => setReopenQuoteTarget(null)}
+          onDone={(id) => setQuotes(quotes.filter(q => q.id !== id))}
+        />
+      )}
       {payQuote && (
         <PaymentModal 
           quote={payQuote} 

@@ -46,14 +46,16 @@ export function BankAccountsPanel({
 
   const handleUpdateBalance = async (id: string) => {
     if (editBalance === "") return;
-    await updateBankAccount(id, Number(editBalance));
+    const res = await updateBankAccount(id, Number(editBalance));
+    if (!res.success) { alert("Erro ao atualizar saldo: " + res.error); return; }
     updateAccounts(accounts.map(a => a.id === id ? { ...a, balance: editBalance } : a));
     setEditingId(null);
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm("Excluir conta bancária?")) return;
-    await deleteBankAccount(id);
+    const res = await deleteBankAccount(id);
+    if (!res.success) { alert(res.error); return; }
     updateAccounts(accounts.filter(a => a.id !== id));
   };
 

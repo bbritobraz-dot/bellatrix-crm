@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { dayKey, timeOfDay } from "@/lib/dates";
 import { 
   Calendar as CalendarIcon, 
   MapPin, 
@@ -47,6 +49,7 @@ import { ptBR } from "date-fns/locale";
 type ViewType = 'month' | 'week' | 'day' | 'list';
 
 export function AgendaClientView({ initialVisits, initialInstallations = [] }: { initialVisits: any[], initialInstallations?: any[] }) {
+  const router = useRouter();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewType, setViewType] = useState<ViewType>('month');
   const [selectedVisit, setSelectedVisit] = useState<any | null>(null);
@@ -111,12 +114,11 @@ export function AgendaClientView({ initialVisits, initialInstallations = [] }: {
   }));
 
   const normalizedInstallations = initialInstallations.map(i => {
-    const dt = new Date(i.installation_date);
     return {
       ...i,
       eventType: 'installation',
-      eventDate: dt.toISOString().split('T')[0],
-      eventTime: dt.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}),
+      eventDate: dayKey(i.installation_date),
+      eventTime: timeOfDay(i.installation_date),
       status: 'instalação'
     };
   });
@@ -132,7 +134,7 @@ export function AgendaClientView({ initialVisits, initialInstallations = [] }: {
       return (
         <div 
           key={event.id} 
-          onClick={() => { setSelectedVisit(event); setIsStatusModalOpen(true); }}
+          onClick={() => openEvent(event)}
           className={`p-3 text-[10px] rounded-xl border ${getStatusBadge(event.status)} transition-all cursor-pointer hover:shadow-lg active:scale-95 mb-2 flex items-center justify-between group`}
         >
           <div className="flex items-center gap-2 overflow-hidden">
@@ -153,10 +155,10 @@ export function AgendaClientView({ initialVisits, initialInstallations = [] }: {
             </div>
             <div>
               <p className="text-[10px] font-heading font-bold text-slate-400 uppercase tracking-widest leading-none">
-                {new Date(event.eventDate).toLocaleDateString('pt-BR', { weekday: 'long' })}
+                {parseISO(event.eventDate).toLocaleDateString('pt-BR', { weekday: 'long' })}
               </p>
               <p className="text-sm font-heading font-bold text-slate-900 uppercase tracking-tight mt-1">
-                {new Date(event.eventDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })}
+                {parseISO(event.eventDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })}
               </p>
             </div>
           </div>
@@ -209,7 +211,7 @@ export function AgendaClientView({ initialVisits, initialInstallations = [] }: {
           {event.status === 'agendada' && event.eventType === 'visit' && (
             <div className="grid grid-cols-3 gap-3 pt-2">
               <button 
-                onClick={() => { setSelectedVisit(event); setIsStatusModalOpen(true); }}
+                onClick={() => openEvent(event)}
                 className="bg-emerald-500 text-white p-3 rounded-2xl flex flex-col items-center justify-center gap-1 hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/10 active:scale-95"
               >
                 <CalendarCheck className="w-4 h-4" />
@@ -234,6 +236,16 @@ export function AgendaClientView({ initialVisits, initialInstallations = [] }: {
         </div>
       </div>
     );
+  };
+
+  // Instalações são gerenciadas na tela de Produção; o modal daqui é só para visitas.
+  const openEvent = (event: any) => {
+    if (event.eventType === 'installation') {
+      router.push('/producao');
+      return;
+    }
+    setSelectedVisit(event);
+    setIsStatusModalOpen(true);
   };
 
   const handleUpdateStatus = async (visitId: string, status: any, clientId: string, hasQuote?: boolean, rescheduleDate?: string, rescheduleTime?: string) => {
@@ -326,7 +338,7 @@ export function AgendaClientView({ initialVisits, initialInstallations = [] }: {
                   dayVisits.map(v => (
                     <div 
                       key={v.id} 
-                      onClick={() => { setSelectedVisit(v); setIsStatusModalOpen(true); }}
+                      onClick={() => openEvent(v)}
                       className="bg-white border border-slate-100 p-5 rounded-3xl shadow-sm hover:shadow-xl hover:shadow-primary/5 transition-all group cursor-pointer"
                     >
                       <div className={`text-[9px] font-heading font-bold mb-2 flex items-center gap-2 ${v.eventType === 'installation' ? 'text-primary' : 'text-blue-500'}`}>
@@ -381,7 +393,7 @@ export function AgendaClientView({ initialVisits, initialInstallations = [] }: {
                 </div>
                 
                 <div 
-                  onClick={() => { setSelectedVisit(visit); setIsStatusModalOpen(true); }}
+                  onClick={() => openEvent(visit)}
                   className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-2xl hover:shadow-primary/5 transition-all duration-500 cursor-pointer"
                 >
                   <div className="flex justify-between items-start mb-6">

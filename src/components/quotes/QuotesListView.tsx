@@ -4,13 +4,14 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Search, Calendar, Factory, ChevronRight, CheckCircle,
-  CreditCard, Building2, AlertCircle, Pencil, RotateCcw, XCircle, Printer,
-  Plus, FileText
+  CreditCard, Building2, AlertCircle, Pencil, RotateCcw, XCircle,
+  Plus, FileText, Trash2, Download
 } from "lucide-react";
 import { BankAccountSelect } from "@/components/finance/BankAccountSelect";
-import { moveToProduction, reopenQuote, updateQuoteStatus } from "@/app/actions/quotes";
+import { moveToProduction, deleteQuote, updateQuoteStatus } from "@/app/actions/quotes";
+import { ReopenQuoteDialog } from "@/components/quotes/ReopenQuoteDialog";
+import { downloadQuotePdf } from "@/lib/quotes/pdfData";
 import { registerPayment } from "@/app/actions/finance";
-import { generateExcelDocument, generateWordDocument } from "@/lib/documentGenerator";
 
 function printReceipt(clientName: string, amount: number, method: string, quoteId: string, remainingBalance: number = 0) {
   const win = window.open("", "_blank", "width=800,height=900");
@@ -99,6 +100,8 @@ export function QuotesListView({ initialQuotes, bankAccounts }: { initialQuotes:
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedQuote, setSelectedQuote] = useState<any>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [reopenTarget, setReopenTarget] = useState<any>(null);
+  const [pdfLoadingId, setPdfLoadingId] = useState<string | null>(null);
 
   const [clientSignal, setClientSignal] = useState<number | "">("");
   const [clientMethod, setClientMethod] = useState("Dinheiro");
@@ -111,7 +114,7 @@ export function QuotesListView({ initialQuotes, bankAccounts }: { initialQuotes:
   const [clientInstallments, setClientInstallments] = useState<number>(1);
 
   const filteredQuotes = quotes.filter(q =>
-    q.client?.name.toLowerCase().includes(search.toLowerCase()) ||
+    (q.client?.name || "").toLowerCase().includes(search.toLowerCase()) ||
     q.id.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -207,14 +210,24 @@ export function QuotesListView({ initialQuotes, bankAccounts }: { initialQuotes:
     }
   };
 
-  const handleReopen = async (quoteId: string) => {
-    if (!confirm("Deseja reabrir este orçamento? Ele voltará para o status de Rascunho.")) return;
-    const res = await reopenQuote(quoteId);
+  const handleDelete = async (quote: any) => {
+    if (!confirm(`Excluir o orçamento #${quote.id.split('-')[0].toUpperCase()} de ${quote.client?.name || "cliente"}?\n\nEssa ação não pode ser desfeita.`)) return;
+    const res = await deleteQuote(quote.id);
     if (res.success) {
-      setQuotes(quotes.map(q => q.id === quoteId ? { ...q, status: 'rascunho' } : q));
-      alert("✅ Orçamento reaberto com sucesso!");
+      setQuotes(quotes.filter(q => q.id !== quote.id));
     } else {
-      alert("Erro ao reabrir: " + res.error);
+      alert(res.error);
+    }
+  };
+
+  const handleDownloadPdf = async (quote: any) => {
+    setPdfLoadingId(quote.id);
+    try {
+      await downloadQuotePdf(quote);
+    } catch (e: any) {
+      alert("Erro ao gerar PDF: " + (e?.message || "tente novamente"));
+    } finally {
+      setPdfLoadingId(null);
     }
   };
 
@@ -344,12 +357,28 @@ export function QuotesListView({ initialQuotes, bankAccounts }: { initialQuotes:
                 )}
                 {(quote.status === 'recusado' || quote.status === 'expirado') && (
                   <button
-                    onClick={() => handleReopen(quote.id)}
+                    onClick={() => setReopenTarget(quote)}
                     className="w-full bg-primary text-vibrant-cyan hover:bg-primary/95 font-heading font-bold uppercase tracking-widest py-4 px-4 rounded-2xl transition-all flex items-center justify-center gap-2 text-[10px]"
                   >
                     <RotateCcw className="w-4 h-4" /> Reabrir Orçamento
                   </button>
                 )}
+
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => handleDownloadPdf(quote)}
+                    disabled={pdfLoadingId === quote.id}
+                    className="bg-slate-50 text-slate-500 hover:bg-slate-100 py-3 rounded-xl transition-all text-[9px] font-heading font-bold uppercase tracking-widest flex items-center justify-center gap-1.5 disabled:opacity-50"
+                  >
+                    <Download className="w-3 h-3" /> {pdfLoadingId === quote.id ? "Gerando..." : "PDF"}
+                  </button>
+                  <button
+                    onClick={() => handleDelete(quote)}
+                    className="bg-slate-50 text-slate-400 hover:bg-rose-50 hover:text-rose-600 py-3 rounded-xl transition-all text-[9px] font-heading font-bold uppercase tracking-widest flex items-center justify-center gap-1.5"
+                  >
+                    <Trash2 className="w-3 h-3" /> Excluir
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -366,6 +395,14 @@ export function QuotesListView({ initialQuotes, bankAccounts }: { initialQuotes:
           </div>
         )}
       </div>
+
+      {reopenTarget && (
+        <ReopenQuoteDialog
+          quote={reopenTarget}
+          onClose={() => setReopenTarget(null)}
+          onDone={(id) => setQuotes(quotes.map(q => q.id === id ? { ...q, status: 'rascunho' } : q))}
+        />
+      )}
 
       {/* Modal de Produção Premium */}
       {isModalOpen && selectedQuote && (

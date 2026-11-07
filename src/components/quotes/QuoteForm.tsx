@@ -28,6 +28,7 @@ interface QuoteItem {
   color?: string;
   commandSide?: string;
   commandHeight?: number | "";
+  ambient?: string;
   marginPercent: number;
   accessories: { accessory: Accessory, quantity: number, charged?: number, cost?: number, salePrice?: number }[];
   
@@ -62,6 +63,10 @@ export function QuoteForm({
       width: Number(item.width_m || 0),
       height: Number(item.height_m || 0),
       quantity: Number(item.quantity || 1),
+      color: item.color || "",
+      commandSide: item.command_side || undefined,
+      commandHeight: item.command_height_m != null ? Number(item.command_height_m) : undefined,
+      ambient: item.ambient || "",
       marginPercent: Number(item.margin_percent || 0),
       accessories: (item.quote_item_accessories || []).map((acc: any) => {
         const accessory = Array.isArray(acc.accessory) ? acc.accessory[0] : acc.accessory;
@@ -127,6 +132,7 @@ export function QuoteForm({
 
   // Observação do item
   const [itemNotes, setItemNotes] = useState("");
+  const [itemAmbient, setItemAmbient] = useState("");
 
   // Filtros
   const productsInCategory = initialProducts.filter(p => p.line === selectedCategory);
@@ -203,7 +209,8 @@ export function QuoteForm({
       salePriceTotal: totalSalePrice,
       profitTotal: totalSalePrice - totalSupplierCost,
       errors: totalErrors,
-      notes: itemNotes
+      notes: itemNotes,
+      ambient: itemAmbient.trim() || undefined
     };
 
     if (editingItemId) {
@@ -223,6 +230,7 @@ export function QuoteForm({
     setCommandHeight("");
     setSelectedAccs([]);
     setItemNotes("");
+    setItemAmbient("");
   };
 
   const removeItem = (id: string) => {
@@ -242,6 +250,7 @@ export function QuoteForm({
     setCommandHeight("");
     setSelectedAccs([]);
     setItemNotes("");
+    setItemAmbient("");
   };
 
   const editItem = (item: QuoteItem) => {
@@ -260,6 +269,7 @@ export function QuoteForm({
       qty: Number(acc.quantity || 1)
     })));
     setItemNotes(item.notes || "");
+    setItemAmbient(item.ambient || "");
   };
 
   const toggleAccessory = (accId: string) => {
@@ -572,13 +582,29 @@ export function QuoteForm({
             </div>
           </div>
 
+          {/* Ambiente do Item (vai para o PDF e para o pedido de fábrica) */}
+          <div className="mb-4">
+            <label className="block text-xs font-heading font-bold text-slate-500 uppercase tracking-widest mb-2">Ambiente</label>
+            <input
+              type="text"
+              list="ambient-suggestions"
+              className="w-full bg-white border border-border rounded-lg p-3 text-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none font-comfortaa text-sm"
+              placeholder="Ex: Sala, Quarto 01, Suíte, Escritório..."
+              value={itemAmbient}
+              onChange={(e) => setItemAmbient(e.target.value)}
+            />
+            <datalist id="ambient-suggestions">
+              {["Sala", "Sala de Jantar", "Quarto 01", "Quarto 02", "Suíte", "Cozinha", "Escritório", "Varanda", "Banheiro", "Lavanderia", "Closet"].map(a => <option key={a} value={a} />)}
+            </datalist>
+          </div>
+
           {/* Observações do Item */}
           <div className="mb-6">
-            <label className="block text-xs font-heading font-bold text-slate-500 uppercase tracking-widest mb-2">Observações / Cômodo</label>
+            <label className="block text-xs font-heading font-bold text-slate-500 uppercase tracking-widest mb-2">Observações</label>
             <textarea
               className="w-full bg-white border border-border rounded-lg p-3 text-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none font-comfortaa text-sm"
               rows={2}
-              placeholder="Ex: Sala de Jantar, Quarto Suíte, etc..."
+              placeholder="Ex: janela com grade, instalar por fora do vão..."
               value={itemNotes}
               onChange={(e) => setItemNotes(e.target.value)}
             />
@@ -771,6 +797,10 @@ export function QuoteForm({
                           Comando: <span className="text-slate-700 font-medium">{item.commandSide} {item.commandHeight ? `(${item.commandHeight}m)` : ""}</span>
                         </p>
                       </div>
+                    )}
+
+                    {item.ambient && (
+                      <p className="mt-2 text-[10px] font-heading font-bold text-primary uppercase tracking-widest">Ambiente: {item.ambient}</p>
                     )}
 
                     {item.notes && (

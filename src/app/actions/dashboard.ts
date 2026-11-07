@@ -1,12 +1,14 @@
 "use server";
 
 import { createAuthedClient } from "@/lib/supabase/server";
+import { todayKey } from "@/lib/dates";
 
 const SALES_STATUSES = ['aprovado', 'em_producao', 'pronto_para_instalacao', 'finalizado'];
 
 export async function getDashboardStats(startDate?: string, endDate?: string) {
   const supabase = await createAuthedClient();
-  const today = new Date().toISOString().split('T')[0];
+  // "Hoje" no fuso de São Paulo (o servidor roda em UTC; após as 21h virava o dia seguinte)
+  const today = todayKey();
 
   let quotesQuery = supabase.from('quotes').select(`
     *,
@@ -84,14 +86,17 @@ export async function getDashboardStats(startDate?: string, endDate?: string) {
     return acc + Math.max(totalVenda - totalRecebido, 0);
   }, 0);
 
-  const custoProjetado = salesQuotes.reduce(
-    (acc, q) => acc + Number(q.supplier_cost_total || q.total_supplier_cost || 0),
-    0
-  );
+  // Custo do pedido: o informado ao ir para produção ou, se não houver, a soma dos itens.
+  // (Antes caía numa coluna inexistente e contava custo 0 → lucro inflado.)
+  const custoProjetado = salesQuotes.reduce((acc, q) => {
+    const informado = Number(q.supplier_cost_total || 0);
+    const somaItens = (q.quote_items || []).reduce((s: number, it: any) => s + Number(it.supplier_cost_total || 0), 0);
+    return acc + (informado > 0 ? informado : somaItens);
+  }, 0);
 
   const despesasPagasPeriodo = (expenses || []).filter(exp => {
     return exp.is_paid === true;
-  }).reduce((acc, exp) => acc + Number(exp.amount || 0), 0);
+  }).reduce((acc, exp) => acc + Number(exp.paid_amount ?? exp.amount ?? 0), 0);
 
   const resultadoReal = recebidoPeriodo - despesasPagasPeriodo;
   const lucroProjetado = vendasFechadas - custoProjetado - despesasPagasPeriodo;
@@ -102,8 +107,8 @@ export async function getDashboardStats(startDate?: string, endDate?: string) {
   const { data: visitsToday } = await supabase.from('visits').select('id').eq('date', today);
   const { data: installsToday } = await supabase.from('quotes')
     .select('id')
-    .gte('installation_date', `${today}T00:00:00`)
-    .lte('installation_date', `${today}T23:59:59`);
+    .gte('installation_date', `${today}T00:00:00-03:00`)
+    .lte('installation_date', `${today}T23:59:59-03:00`);
 
   const pedidosEmAtraso = quotes.filter(q =>
     ['em_producao', 'pronto_para_instalacao'].includes(q.status) &&

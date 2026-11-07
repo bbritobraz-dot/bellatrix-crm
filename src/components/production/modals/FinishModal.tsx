@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { CheckCircle, X } from "lucide-react";
-import { registerClientPayment } from "@/app/actions/finance";
 import { finishOrder } from "@/app/actions/quotes";
 import { BankAccountSelect } from "@/components/finance/BankAccountSelect";
 import { printReceipt } from "@/lib/utils/print";
@@ -33,19 +32,22 @@ export function FinishModal({ quote, bankAccounts, onClose, onSuccess }: FinishM
     }
     setIsFinishing(true);
     try {
-      if (finishAmount && Number(finishAmount) > 0) {
-        await registerClientPayment({
-          quote_id: quote.id,
-          client_id: quote.client_id,
-          amount: Number(finishAmount),
-          payment_method: finishMethod,
-          bank_account_id: finishBankId,
-          installments: finishMethod === 'Cartão de Crédito' ? finishInstallments : undefined,
-          notes: "Pagamento na instalação (finalização)",
-        });
-        printReceipt(quote.client?.name || "Cliente", Number(finishAmount), finishMethod, quote.id, 0);
+      // Recebimento + finalização numa única transação: ou tudo, ou nada
+      const amount = Number(finishAmount || 0);
+      const finishRes = await finishOrder(quote.id, amount > 0 ? {
+        amount,
+        method: finishMethod,
+        bankAccountId: finishBankId,
+        installments: finishMethod === 'Cartão de Crédito' ? finishInstallments : undefined,
+      } : undefined);
+      if (!finishRes.success) {
+        alert("Não foi possível finalizar: " + finishRes.error + "\nNada foi registrado.");
+        return;
       }
-      await finishOrder(quote.id);
+      if (amount > 0) {
+        const remaining = Math.max(Number(quote.total_sale_price) - Number(quote.total_paid || 0) - amount, 0);
+        printReceipt(quote.client?.name || "Cliente", amount, finishMethod, quote.id, remaining);
+      }
       onSuccess(quote.id);
       onClose();
       alert("Instalação concluída e Garantia ativada!");

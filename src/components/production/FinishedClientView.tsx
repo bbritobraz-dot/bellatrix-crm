@@ -2,27 +2,17 @@
 
 import { useState } from "react";
 import { Search, ShieldCheck, ShieldAlert, Calendar, RotateCcw } from "lucide-react";
-import { reopenQuote } from "@/app/actions/quotes";
+import { ReopenQuoteDialog } from "@/components/quotes/ReopenQuoteDialog";
 
 export function FinishedClientView({ initialQuotes }: { initialQuotes: any[] }) {
   const [quotes, setQuotes] = useState(initialQuotes);
   const [search, setSearch] = useState("");
+  const [reopenTarget, setReopenTarget] = useState<any | null>(null);
 
   const filteredQuotes = quotes.filter(q => 
-    q.client?.name.toLowerCase().includes(search.toLowerCase()) ||
+    (q.client?.name || "").toLowerCase().includes(search.toLowerCase()) ||
     q.id.toLowerCase().includes(search.toLowerCase())
   );
-
-  const handleReopen = async (quoteId: string) => {
-    if (!confirm("Deseja reabrir este pedido finalizado? Ele voltará para orçamentos como Rascunho.")) return;
-    const res = await reopenQuote(quoteId);
-    if (res.success) {
-      setQuotes(quotes.filter(q => q.id !== quoteId));
-      alert("✅ Pedido reaberto com sucesso! Agora ele está em Orçamentos.");
-    } else {
-      alert("Erro ao reabrir: " + res.error);
-    }
-  };
 
   return (
     <div>
@@ -40,7 +30,15 @@ export function FinishedClientView({ initialQuotes }: { initialQuotes: any[] }) 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredQuotes.map(quote => {
           const now = new Date();
-          const warrantyEnd = new Date(quote.warranty_end_date);
+          // Pedidos antigos podem não ter warranty_end_date: new Date(null) = 1970 e
+          // aparecia "Garantia Expirada". Usa 1 ano após a instalação como padrão.
+          const warrantyEnd = quote.warranty_end_date
+            ? new Date(quote.warranty_end_date)
+            : (() => {
+                const d = new Date(quote.installation_date || quote.updated_at || quote.created_at);
+                d.setFullYear(d.getFullYear() + 1);
+                return d;
+              })();
           const isWarrantyActive = now <= warrantyEnd;
           
           // Calcula quantos dias faltam para a garantia expirar
@@ -68,11 +66,11 @@ export function FinishedClientView({ initialQuotes }: { initialQuotes: any[] }) 
                 <div className="space-y-1 mt-4">
                   <div className="flex items-center gap-2 text-sm text-slate-500">
                     <Calendar className="w-4 h-4 text-slate-400"/>
-                    <span>Instalado: <span className="text-slate-700 font-medium">{new Date(quote.installation_date).toLocaleDateString('pt-BR')}</span></span>
+                    <span>Instalado: <span className="text-slate-700 font-medium">{quote.installation_date ? new Date(quote.installation_date).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : '—'}</span></span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-slate-500">
                     <ShieldCheck className="w-4 h-4 text-slate-400"/>
-                    <span>Vence em: <span className="text-slate-700 font-medium">{warrantyEnd.toLocaleDateString('pt-BR')}</span></span>
+                    <span>Vence em: <span className="text-slate-700 font-medium">{warrantyEnd.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}</span></span>
                   </div>
                 </div>
 
@@ -107,7 +105,7 @@ export function FinishedClientView({ initialQuotes }: { initialQuotes: any[] }) 
                   </span>
                 </div>
                 <button
-                  onClick={() => handleReopen(quote.id)}
+                  onClick={() => setReopenTarget(quote)}
                   className="bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 p-2 rounded-lg transition-colors flex items-center gap-1 text-xs font-medium"
                   title="Reabrir Orçamento"
                 >
@@ -123,6 +121,13 @@ export function FinishedClientView({ initialQuotes }: { initialQuotes: any[] }) 
           </div>
         )}
       </div>
+      {reopenTarget && (
+        <ReopenQuoteDialog
+          quote={reopenTarget}
+          onClose={() => setReopenTarget(null)}
+          onDone={(id) => setQuotes(quotes.filter(q => q.id !== id))}
+        />
+      )}
     </div>
   );
 }

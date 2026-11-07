@@ -32,7 +32,7 @@ export function ExpensesTab({ expenses, setExpenses, categories, bankAccounts }:
     if (res.success) {
       const catName = categories.find(c => c.id === catId)?.name || "";
       const bankName = bankAccounts.find(b => b.id === bankAccountId)?.bank_name || "";
-      setExpenses([{ id: Math.random().toString(), description: desc, amount, date, due_date: dueDate, category: { name: catName }, payment_method: method, bank_name: bankName }, ...expenses]);
+      setExpenses([{ id: res.id, description: desc, amount, date, due_date: dueDate, category: { name: catName }, payment_method: method, bank_name: bankName }, ...expenses]);
       setIsOpen(false); reset();
     }
     setIsSaving(false);

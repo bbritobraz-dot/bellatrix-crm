@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { scheduleInstallation } from "@/app/actions/quotes";
+import { dayKey, timeOfDay, todayKey } from "@/lib/dates";
 
 interface ScheduleModalProps {
   quote: any;
@@ -17,11 +18,11 @@ export function ScheduleModal({ quote, onClose, onSuccess }: ScheduleModalProps)
 
   useEffect(() => {
     if (quote.installation_date) {
-      const dt = new Date(quote.installation_date);
-      setScheduleDate(dt.toISOString().split("T")[0]);
-      setScheduleTime(dt.toLocaleTimeString("pt-BR", {hour: '2-digit', minute:'2-digit'}));
+      // Fuso de São Paulo: toISOString() usava UTC e trocava o dia após as 21h
+      setScheduleDate(dayKey(quote.installation_date));
+      setScheduleTime(timeOfDay(quote.installation_date));
     } else {
-      setScheduleDate(new Date().toISOString().split("T")[0]);
+      setScheduleDate(todayKey());
       setScheduleTime("09:00");
     }
   }, [quote]);

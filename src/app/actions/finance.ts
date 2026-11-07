@@ -2,7 +2,7 @@
 
 import { createAuthedClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import { OPEN_ORDER_STATUSES, adjustBankBalance, dayKey, dayLabel, getOrCreateExpenseCategoryId, toBusinessTimestamp } from "@/lib/finance/helpers";
+import { OPEN_ORDER_STATUSES, dayKey, dayLabel, toBusinessTimestamp } from "@/lib/finance/helpers";
 
 // ==========================================
 // CONFIGURAÇÕES DE TAXAS DE CARTÃO
@@ -54,7 +54,11 @@ export async function updateBankAccount(id: string, balance: number) {
 
 export async function deleteBankAccount(id: string) {
   const supabase = await createAuthedClient();
-  await supabase.from("bank_accounts").delete().eq("id", id);
+  const { error } = await supabase.from("bank_accounts").delete().eq("id", id);
+  if (error) {
+    // Conta com lançamentos vinculados não pode ser apagada (chave estrangeira)
+    return { success: false, error: "Esta conta tem pagamentos ou despesas vinculados e não pode ser excluída." };
+  }
   revalidatePath("/financeiro");
   return { success: true };
 }
@@ -256,40 +260,27 @@ export async function getExpenses() {
 
 export async function createExpense(payload: any) {
   const supabase = await createAuthedClient();
-  const amount = Number(payload.amount);
-  if (!(amount > 0)) return { success: false, error: "Valor deve ser maior que zero." };
-
-  const date = toBusinessTimestamp(payload.date) || new Date().toISOString();
-  const { error } = await supabase.from("expenses").insert([{
-    ...payload,
-    amount,
-    date,
-    due_date: toBusinessTimestamp(payload.due_date) ?? null,
-    is_paid: true,
-    paid_date: date,
-    paid_amount: amount,
-    paid_method: payload.payment_method,
-  }]);
+  // Uma única transação no banco: grava a despesa e debita a conta juntas
+  const { data, error } = await supabase.rpc("create_paid_expense", {
+    p_category: payload.category_id,
+    p_description: payload.description,
+    p_amount: Number(payload.amount),
+    p_bank: payload.bank_account_id,
+    p_method: payload.payment_method ?? null,
+    p_date: toBusinessTimestamp(payload.date) ?? null,
+    p_due_date: toBusinessTimestamp(payload.due_date) ?? null,
+    p_notes: payload.notes ?? null,
+  });
   if (error) return { success: false, error: error.message };
-
-  const balanceError = await adjustBankBalance(supabase, payload.bank_account_id, -amount);
-  if (balanceError) return { success: false, error: balanceError };
-
   revalidatePath("/financeiro");
-  return { success: true };
+  return { success: true, id: data as string };
 }
 
 export async function deleteExpense(id: string) {
   const supabase = await createAuthedClient();
-  const { data: expense } = await supabase.from("expenses").select("amount, paid_amount, is_paid, bank_account_id").eq("id", id).single();
-  const { error } = await supabase.from("expenses").delete().eq("id", id);
+  // Devolve o valor pago à conta e, se for pagamento à fábrica, ajusta o pedido
+  const { error } = await supabase.rpc("delete_expense", { p_id: id });
   if (error) return { success: false, error: error.message };
-  if (expense?.is_paid && expense.bank_account_id) {
-    // Devolve o que de fato saiu da conta (paid_amount), não o valor original da despesa
-    const refund = Number(expense.paid_amount ?? expense.amount);
-    const balanceError = await adjustBankBalance(supabase, expense.bank_account_id, refund);
-    if (balanceError) return { success: false, error: balanceError };
-  }
   revalidatePath("/financeiro");
   return { success: true };
 }
@@ -317,81 +308,30 @@ export async function registerPayment(payload: {
   manual_description?: string;
   bank_account_id: string;
   installments?: number;
+  payment_date?: string;
 }) {
   const supabase = await createAuthedClient();
-  const now = new Date().toISOString();
 
-  let netAmount = Number(payload.amount);
-  let cardFeeAmount = 0;
-  let feePercent = 0;
+  // Tudo numa transação no banco: pagamento, taxa do cartão, saldo da conta e
+  // total pago do pedido. Também bloqueia valor acima do saldo devedor.
+  const { error } = await supabase.rpc("register_payment", {
+    p_amount: Number(payload.amount),
+    p_method: payload.payment_method,
+    p_bank: payload.bank_account_id || null,
+    p_quote_id: payload.quote_id || null,
+    p_client_id: payload.client_id || null,
+    p_notes: payload.notes || null,
+    p_installments: payload.installments ?? null,
+    p_is_manual: payload.is_manual ?? false,
+    p_manual_description: payload.manual_description || null,
+    p_payment_date: toBusinessTimestamp(payload.payment_date) ?? null,
+  });
 
-  // 1. Buscar Taxa Dinâmica se for Cartão
-  if ((payload.payment_method === 'Cartão de Crédito' && payload.installments) || payload.payment_method === 'Cartão de Débito') {
-    const lookupInstallments = payload.payment_method === 'Cartão de Débito' ? 0 : payload.installments;
-    
-    const { data: feeSetting } = await supabase
-      .from('card_fee_settings')
-      .select('fee_percent')
-      .eq('installments', lookupInstallments)
-      .single();
-    
-    if (feeSetting) {
-      feePercent = Number(feeSetting.fee_percent);
-      cardFeeAmount = (Number(payload.amount) * feePercent) / 100;
-      netAmount = Number(payload.amount) - cardFeeAmount;
-    }
-  }
-
-  // 2. Inserir o pagamento
-  const { error: paymentError } = await supabase
-    .from("payments")
-    .insert([{
-      ...payload,
-      notes: payload.payment_method === 'Cartão de Crédito' && payload.installments 
-        ? `${payload.notes || ''} (Parcelado em ${payload.installments}x)`.trim() 
-        : payload.notes
-    }]);
-
-  if (paymentError) return { success: false, error: paymentError.message };
-
-  // 3. Registrar Taxa como Despesa
-  if (cardFeeAmount > 0) {
-    const { data: cat } = await supabase.from('expense_categories').select('id').eq('name', 'Taxas de Cartão').single();
-    let categoryId = cat?.id;
-    if (!categoryId) {
-      const { data: newCat } = await supabase.from('expense_categories').insert({ name: 'Taxas de Cartão', is_custom: true }).select().single();
-      categoryId = newCat?.id;
-    }
-    if (categoryId) {
-      const isDebit = payload.payment_method === 'Cartão de Débito';
-      await supabase.from('expenses').insert({
-        category_id: categoryId,
-        description: `Taxa de Cartão (${isDebit ? 'Débito' : 'Crédito'}) - Ref. ${payload.quote_id?.split('-')[0] || 'Manual'}`,
-        amount: cardFeeAmount,
-        date: now,
-        is_paid: true,
-        paid_date: now,
-        paid_amount: cardFeeAmount,
-        bank_account_id: payload.bank_account_id,
-        notes: `Taxa de ${feePercent}% sobre R$ ${payload.amount} ${isDebit ? '(Débito)' : `(${payload.installments}x)`}`
-      });
-    }
-  }
-
-  // 4. Atualizar Saldo
-  const balanceError = await adjustBankBalance(supabase, payload.bank_account_id, netAmount);
-  if (balanceError) return { success: false, error: balanceError };
-
-  // 5. Atualizar total_paid no orçamento
-  if (payload.quote_id) {
-    const { data: quote } = await supabase.from("quotes").select("total_paid").eq("id", payload.quote_id).single();
-    if (quote) {
-      await supabase.from("quotes").update({ total_paid: (Number(quote.total_paid) || 0) + Number(payload.amount) }).eq("id", payload.quote_id);
-    }
-  }
+  if (error) return { success: false, error: error.message };
 
   revalidatePath("/financeiro");
   revalidatePath("/orcamentos");
+  revalidatePath("/producao");
   return { success: true };
 }
 
@@ -427,78 +367,28 @@ export async function getPayables() {
 
 export async function liquidateExpense(id: string, payload: any) {
   const supabase = await createAuthedClient();
-  const paid = Number(payload.paid_amount);
-  if (!(paid > 0)) return { success: false, error: "Valor deve ser maior que zero." };
-  if (!payload.bank_account_id) return { success: false, error: "Selecione a conta bancária." };
-
-  const { data: expense, error: fetchError } = await supabase.from("expenses").select("*").eq("id", id).single();
-  if (fetchError || !expense) return { success: false, error: "Despesa não encontrada." };
-  // Evita debitar a conta duas vezes (ex.: duplo clique ou despesa já quitada)
-  if (expense.is_paid) return { success: false, error: "Esta despesa já foi paga." };
-
-  const now = new Date().toISOString();
-  const total = Number(expense.amount);
-  const remaining = Math.round((total - paid) * 100) / 100;
-
-  if (remaining > 0) {
-    // Pagamento parcial: registra a parte paga como uma despesa quitada
-    // e mantém o restante em aberto no A Pagar (antes o restante sumia).
-    const { error: partError } = await supabase.from("expenses").insert({
-      category_id: expense.category_id,
-      description: `${expense.description} (parcial)`,
-      amount: paid,
-      date: now,
-      due_date: expense.due_date,
-      payment_method: payload.paid_method,
-      notes: expense.notes,
-      is_paid: true,
-      paid_date: now,
-      paid_amount: paid,
-      paid_method: payload.paid_method,
-      bank_account_id: payload.bank_account_id,
-    });
-    if (partError) return { success: false, error: partError.message };
-
-    const { error } = await supabase.from("expenses").update({ amount: remaining, updated_at: now }).eq("id", id).eq("is_paid", false);
-    if (error) return { success: false, error: error.message };
-  } else {
-    const { data: updated, error } = await supabase
-      .from("expenses")
-      .update({ is_paid: true, paid_date: now, paid_amount: paid, paid_method: payload.paid_method, bank_account_id: payload.bank_account_id, updated_at: now })
-      .eq("id", id)
-      .eq("is_paid", false)
-      .select("id");
-    if (error) return { success: false, error: error.message };
-    if (!updated || updated.length === 0) return { success: false, error: "Esta despesa já foi paga." };
-  }
-
-  const balanceError = await adjustBankBalance(supabase, payload.bank_account_id, -paid);
-  if (balanceError) return { success: false, error: balanceError };
-
+  // Pagamento parcial mantém o restante em aberto; quitar duas vezes é bloqueado
+  const { data, error } = await supabase.rpc("liquidate_expense", {
+    p_id: id,
+    p_amount: Number(payload.paid_amount),
+    p_method: payload.paid_method,
+    p_bank: payload.bank_account_id || null,
+  });
+  if (error) return { success: false, error: error.message };
   revalidatePath("/financeiro");
-  return { success: true, remaining: Math.max(remaining, 0) };
+  return { success: true, remaining: Number(data || 0) };
 }
 
 export async function liquidateSupplierPayment(quoteId: string, payload: any) {
   const supabase = await createAuthedClient();
-  const { data: quote } = await supabase.from("quotes").select("supplier_paid, supplier_cost_total").eq("id", quoteId).single();
-  if (!quote) return { success: false, error: "Pedido não encontrado" };
-  const amount = Number(payload.amount);
-  if (!(amount > 0)) return { success: false, error: "Valor deve ser maior que zero." };
-  if (!payload.bank_account_id) return { success: false, error: "Selecione a conta bancária." };
-
-  const { error } = await supabase.from("quotes").update({ supplier_paid: (Number(quote.supplier_paid) || 0) + amount }).eq("id", quoteId);
+  const { error } = await supabase.rpc("pay_supplier", {
+    p_quote_id: quoteId,
+    p_amount: Number(payload.amount),
+    p_method: payload.payment_method,
+    p_bank: payload.bank_account_id || null,
+    p_description: `Liquidação Fornecedor - Pedido ${quoteId.split('-')[0].toUpperCase()}`,
+  });
   if (error) return { success: false, error: error.message };
-
-  const balanceError = await adjustBankBalance(supabase, payload.bank_account_id, -amount);
-  if (balanceError) return { success: false, error: balanceError };
-
-  // Registra a saída nas despesas (cria a categoria se não existir; antes o lançamento era perdido)
-  const categoryId = await getOrCreateExpenseCategoryId(supabase, "Custo de Produtos");
-  if (categoryId) {
-    const now = new Date().toISOString();
-    await supabase.from('expenses').insert({ category_id: categoryId, description: `Liquidação Fornecedor - Pedido ${quoteId.split('-')[0].toUpperCase()}`, amount, date: now, payment_method: payload.payment_method, is_paid: true, paid_date: now, paid_amount: amount, paid_method: payload.payment_method, bank_account_id: payload.bank_account_id });
-  }
   revalidatePath("/financeiro");
   return { success: true };
 }
