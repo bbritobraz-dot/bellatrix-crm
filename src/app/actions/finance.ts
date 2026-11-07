@@ -2,6 +2,7 @@
 
 import { createAuthedClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { round2 } from "@/lib/money";
 import { OPEN_ORDER_STATUSES, dayKey, dayLabel, toBusinessTimestamp } from "@/lib/finance/helpers";
 
 // ==========================================
@@ -342,7 +343,7 @@ export async function registerPayment(payload: {
 export async function getReceivables() {
   const supabase = await createAuthedClient();
   const { data } = await supabase.from("quotes").select("id, client_id, status, total_sale_price, total_paid, created_at, client:clients(name, phone)").in("status", ["em_producao", "pronto_para_instalacao", "finalizado"]).order("created_at", { ascending: false });
-  return (data || []).map(q => ({ ...q, pending_amount: Math.max(Number(q.total_sale_price) - Number(q.total_paid || 0), 0) })).filter(q => q.pending_amount > 0);
+  return (data || []).map(q => ({ ...q, pending_amount: round2(Math.max(Number(q.total_sale_price) - Number(q.total_paid || 0), 0)) })).filter(q => q.pending_amount > 0);
 }
 
 export async function registerClientPayment(payload: any) {
@@ -360,7 +361,7 @@ export async function getPayables() {
 
   const supplierPayables = (quotes || []).map(q => {
     const client = Array.isArray(q.client) ? q.client[0] : q.client;
-    return { id: q.id, type: "fornecedor", description: `Custo Fábrica - ${client?.name || "Cliente"}`, amount: Math.max(Number(q.supplier_cost_total) - Number(q.supplier_paid || 0), 0), due_date: q.supplier_payment_deadline, category: { name: "Custo de Produtos" } };
+    return { id: q.id, type: "fornecedor", description: `Custo Fábrica - ${client?.name || "Cliente"}`, amount: round2(Math.max(Number(q.supplier_cost_total) - Number(q.supplier_paid || 0), 0)), due_date: q.supplier_payment_deadline, category: { name: "Custo de Produtos" } };
   }).filter(q => q.amount > 0);
   return { expenses: (expenses || []).map(e => ({ ...e, type: "despesa" })), supplierPayables };
 }

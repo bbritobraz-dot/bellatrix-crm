@@ -1,4 +1,6 @@
 "use client";
+import { round2 } from "@/lib/money";
+import { printReceipt } from "@/lib/utils/print";
 import { notify, confirmDialog } from "@/lib/notify";
 
 import { useState } from "react";
@@ -14,84 +16,6 @@ import { ReopenQuoteDialog } from "@/components/quotes/ReopenQuoteDialog";
 import { downloadQuotePdf } from "@/lib/quotes/pdfData";
 import { registerPayment } from "@/app/actions/finance";
 
-function printReceipt(clientName: string, amount: number, method: string, quoteId: string, remainingBalance: number = 0) {
-  const win = window.open("", "_blank", "width=800,height=900");
-  if (!win) return;
-  const dateStr = new Date().toLocaleDateString("pt-BR");
-  const ref = quoteId.split("-")[0].toUpperCase();
-
-  win.document.write(`
-    <!DOCTYPE html>
-    <html lang="pt-BR">
-    <head>
-      <meta charset="UTF-8" />
-      <title>Recibo Bellatrix - ${clientName}</title>
-      <style>
-        @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Comfortaa:wght@400;700&display=swap');
-        body { font-family: 'Comfortaa', sans-serif; padding: 40px; color: #051C2C; max-width: 700px; margin: auto; line-height: 1.5; background: #ffffff; }
-        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(128, 150, 170, 0.2); padding-bottom: 20px; margin-bottom: 20px; }
-        .company-info { text-align: center; flex: 1; }
-        .contacts { text-align: right; }
-        .logo { width: 120px; height: auto; }
-        .doc-info-bar { background: #051C2C; color: white; padding: 12px; border-radius: 8px; margin-bottom: 15px; display: flex; justify-content: center; align-items: center; gap: 15px; font-size: 12px; font-family: 'Barlow Condensed', sans-serif; text-transform: uppercase; letter-spacing: 1px; }
-        .doc-info-bar b { color: #0accef; }
-        .client-info-bar { border-bottom: 1px solid rgba(128, 150, 170, 0.2); padding-bottom: 12px; margin-bottom: 35px; display: flex; align-items: center; gap: 15px; font-size: 12px; }
-        .separator { color: #8096aa; }
-        .content { margin: 40px 0; text-align: center; }
-        .receipt-title { font-family: 'Barlow Condensed', sans-serif; font-size: 32px; font-weight: bold; color: #09344a; margin-bottom: 15px; text-transform: uppercase; }
-        .amount-box { background: #ffffff; border: 2px solid #0accef; color: #09344a; padding: 30px; border-radius: 15px; display: inline-block; margin: 25px 0; min-width: 250px; box-shadow: 0 10px 25px rgba(10, 204, 239, 0.1); }
-        .amount-value { font-size: 42px; font-weight: 800; font-family: 'Barlow Condensed', sans-serif; }
-        .balance-section { margin-top: 25px; padding: 15px; border-radius: 10px; background: rgba(75, 97, 115, 0.05); border: 1px solid rgba(75, 97, 115, 0.1); display: inline-block; min-width: 300px; }
-        .balance-label { font-size: 11px; text-transform: uppercase; color: #4b6173; letter-spacing: 1px; margin-bottom: 5px; font-weight: bold; }
-        .balance-value { font-size: 20px; font-weight: bold; color: #09344a; font-family: 'Barlow Condensed', sans-serif; }
-        .success-section { margin-top: 25px; padding: 15px; border-radius: 10px; background: #a3c4b0; color: white; font-weight: bold; display: inline-block; min-width: 300px; font-family: 'Barlow Condensed', sans-serif; text-transform: uppercase; letter-spacing: 1px; }
-        .signature-section { margin-top: 60px; text-align: center; }
-        .signature-img { width: 140px; margin-bottom: 5px; }
-        .signature-line { width: 200px; border-top: 1px solid #09344a; margin: 0 auto; opacity: 0.3; }
-        .footer { text-align: center; font-size: 10px; color: #8096aa; margin-top: 60px; }
-        @media print { .print-btn { display: none; } }
-        .print-btn { display: block; margin: 40px auto; padding: 15px 45px; background: #0accef; color: #09344a; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 16px; font-family: 'Barlow Condensed', sans-serif; text-transform: uppercase; letter-spacing: 1px; transition: all 0.2s; }
-        .print-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(10, 204, 239, 0.3); }
-      </style>
-    </head>
-    <body>
-      <div class="header">
-        <div style="width: 25%"><img src="/logo.png" class="logo" /></div>
-        <div class="company-info">
-          <div style="font-family: 'Barlow Condensed', sans-serif; font-weight: bold; font-size: 20px; text-transform: uppercase; color: #09344a;">Bellatrix Lumina</div>
-          <div style="font-size: 10px; color: #4b6173;">CNPJ: 47.214.728/0001-80 | Excelência em Persianas</div>
-        </div>
-        <div class="contacts" style="width: 30%"><div style="font-size: 10px; color: #4b6173;">+55 45 98808 9137</div></div>
-      </div>
-      <div class="doc-info-bar"><b>RECIBO DE PAGAMENTO</b><span class="separator">|</span><span>Ref: #${ref}</span><span class="separator">|</span><span>Data: ${dateStr}</span></div>
-      <div class="client-info-bar"><b>CLIENTE</b><span class="separator">|</span><span style="font-weight:bold">${clientName}</span><span class="separator">|</span><span style="text-transform:capitalize">Meio: ${method}</span></div>
-      <div class="content">
-        <div class="receipt-title">Comprovante de Entrada</div>
-        <div class="amount-box">
-          <div style="font-size: 11px; text-transform: uppercase; margin-bottom: 8px; color: #4b6173; font-weight: bold;">Valor Recebido</div>
-          <div class="amount-value">R$ ${amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-        </div>
-        ${remainingBalance > 0 ? `
-          <div class="balance-section">
-            <div class="balance-label">Saldo em Aberto</div>
-            <div class="balance-value">R$ ${remainingBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-          </div>
-        ` : `
-          <div class="success-section">Pedido Totalmente Quitado</div>
-        `}
-      </div>
-      <div class="signature-section">
-        <img src="/assignature.png" class="signature-img" />
-        <div class="signature-line"></div>
-        <div style="font-size: 11px; color: #4b6173; margin-top: 8px; font-weight: bold; text-transform: uppercase;">Responsável Bellatrix</div>
-      </div>
-      <div class="footer">Este recibo confirma o processamento do seu pedido.</div>
-      <button class="print-btn" onclick="window.print()">Imprimir Recibo</button>
-    </body>
-    </html>
-  `);
-  win.document.close();
-}
 
 export function QuotesListView({ initialQuotes, bankAccounts }: { initialQuotes: any[], bankAccounts: any[] }) {
   const router = useRouter();
@@ -188,15 +112,16 @@ export function QuotesListView({ initialQuotes, bankAccounts }: { initialQuotes:
 
         const totalSale = Number(selectedQuote.total_sale_price || 0);
         const signalVal = Number(clientSignal || 0);
-        const remaining = Math.max(totalSale - signalVal, 0);
+        const remaining = round2(Math.max(totalSale - signalVal, 0));
 
-        printReceipt(
-          selectedQuote.client?.name || "Cliente",
-          signalVal,
-          clientMethod,
-          selectedQuote.id,
-          remaining
-        );
+        if (!printReceipt({
+          clientName: selectedQuote.client?.name || "Cliente",
+          amount: signalVal,
+          method: clientMethod,
+          reference: selectedQuote.id,
+          title: "Comprovante de Entrada",
+          remainingBalance: remaining,
+        })) notify.warning("O navegador bloqueou a janela do recibo. Permita pop-ups para este site.");
       }
 
       setQuotes(quotes.filter(q => q.id !== selectedQuote.id));
