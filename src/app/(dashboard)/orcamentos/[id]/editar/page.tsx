@@ -23,7 +23,7 @@ export default async function EditarOrcamentoPage({
       .from("quotes")
       .select(`
         *,
-        client:clients(id, name, phone, address, status),
+        client:clients(id, name, phone, email, address, status),
         quote_items(
           id,
           product_id,
@@ -57,7 +57,7 @@ export default async function EditarOrcamentoPage({
     supabase.from("reforms").select("*").eq("active", true).order("name"),
     supabase
       .from("clients")
-      .select("id, name, phone, address, status")
+      .select("id, name, phone, email, address, status")
       .order("name"),
   ]);
 

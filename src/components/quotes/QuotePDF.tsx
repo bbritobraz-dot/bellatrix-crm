@@ -229,7 +229,8 @@ type Row = {
   accessories: { description: string; quantity: number; measure: string; total: number }[];
 };
 
-export const QuotePDF = ({ data }: { data: QuotePDFProps }) => {
+// logoSrc: no servidor (envio por e-mail) o logo é passado como arquivo/dados; no navegador usa /logo.png
+export const QuotePDF = ({ data, logoSrc }: { data: QuotePDFProps; logoSrc?: string | Buffer | { data: Buffer; format: 'png' | 'jpg' } }) => {
   const quoteDate = data.date || new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
   const quoteNumber = data.quoteId ? data.quoteId.split('-')[0].toUpperCase() : 'NOVO';
 
@@ -294,7 +295,7 @@ export const QuotePDF = ({ data }: { data: QuotePDFProps }) => {
 
         {/* CABEÇALHO */}
         <View style={styles.header}>
-          <Image src="/logo.png" style={styles.logo} />
+          <Image src={(logoSrc as any) || "/logo.png"} style={styles.logo} />
           <View style={styles.companyBlock}>
             <Text style={styles.companyName}>Persianas Bellatrix</Text>
             <Text style={styles.companyLine}>CNPJ 47.214.728/0001-80 · Foz do Iguaçu - PR</Text>

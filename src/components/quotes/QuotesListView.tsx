@@ -1,4 +1,5 @@
 "use client";
+import { SendQuoteEmailDialog } from "@/components/quotes/SendQuoteEmailDialog";
 import { round2 } from "@/lib/money";
 import { printReceipt } from "@/lib/utils/print";
 import { notify, confirmDialog } from "@/lib/notify";
@@ -8,7 +9,7 @@ import { useRouter } from "next/navigation";
 import {
   Search, Calendar, Factory, ChevronRight, CheckCircle,
   CreditCard, Building2, AlertCircle, Pencil, RotateCcw, XCircle,
-  Plus, FileText, Trash2, Download, Send
+  Plus, FileText, Trash2, Download, Send, Mail
 } from "lucide-react";
 import { BankAccountSelect } from "@/components/finance/BankAccountSelect";
 import { moveToProduction, deleteQuote, updateQuoteStatus } from "@/app/actions/quotes";
@@ -34,6 +35,7 @@ export function QuotesListView({ initialQuotes, bankAccounts }: { initialQuotes:
   const [selectedQuote, setSelectedQuote] = useState<any>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [reopenTarget, setReopenTarget] = useState<any>(null);
+  const [emailTarget, setEmailTarget] = useState<any>(null);
   const [pdfLoadingId, setPdfLoadingId] = useState<string | null>(null);
 
   const [clientSignal, setClientSignal] = useState<number | "">("");
@@ -292,13 +294,19 @@ export function QuotesListView({ initialQuotes, bankAccounts }: { initialQuotes:
                   </button>
                 )}
 
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   <button
                     onClick={() => handleDownloadPdf(quote)}
                     disabled={pdfLoadingId === quote.id}
                     className="bg-sky-50 text-sky-700 border border-sky-200 hover:bg-sky-100 py-3 rounded-xl transition-all text-[9px] font-heading font-bold uppercase tracking-widest flex items-center justify-center gap-1.5 disabled:opacity-50"
                   >
                     <Download className="w-3 h-3" /> {pdfLoadingId === quote.id ? "Gerando..." : "PDF"}
+                  </button>
+                  <button
+                    onClick={() => setEmailTarget(quote)}
+                    className="bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 py-3 rounded-xl transition-all text-[9px] font-heading font-bold uppercase tracking-widest flex items-center justify-center gap-1.5"
+                  >
+                    <Mail className="w-3 h-3" /> E-mail
                   </button>
                   <button
                     onClick={() => handleDelete(quote)}
@@ -323,6 +331,18 @@ export function QuotesListView({ initialQuotes, bankAccounts }: { initialQuotes:
           </div>
         )}
       </div>
+
+      {emailTarget && (
+        <SendQuoteEmailDialog
+          quoteId={emailTarget.id}
+          clientName={emailTarget.client?.name || "Cliente"}
+          defaultEmail={emailTarget.client?.email}
+          onClose={() => setEmailTarget(null)}
+          onSent={({ email, newStatus }) => setQuotes(quotes.map(q => q.id === emailTarget.id
+            ? { ...q, status: newStatus || q.status, client: { ...q.client, email: q.client?.email || email } }
+            : q))}
+        />
+      )}
 
       {reopenTarget && (
         <ReopenQuoteDialog

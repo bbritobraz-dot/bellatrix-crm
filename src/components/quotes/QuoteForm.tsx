@@ -1,8 +1,9 @@
 "use client";
+import { SendQuoteEmailDialog } from "./SendQuoteEmailDialog";
 import { notify } from "@/lib/notify";
 
 import { useState } from "react";
-import { Plus, Trash2, Calculator, Save, FileText, CheckCircle, Download, Settings2, Pencil, X } from "lucide-react";
+import { Plus, Trash2, Calculator, Save, FileText, CheckCircle, Download, Settings2, Pencil, X, Mail } from "lucide-react";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import { QuotePDF } from "./QuotePDF";
 import { saveQuote, updateQuote } from "@/app/actions/quotes";
@@ -96,6 +97,8 @@ export function QuoteForm({
   const [clientName, setClientName] = useState(initialQuote?.client?.name || "");
   const [clientPhone, setClientPhone] = useState(initialQuote?.client?.phone || "");
   const [clientAddress, setClientAddress] = useState(initialQuote?.client?.address || "");
+  const [clientEmail, setClientEmail] = useState(initialQuote?.client?.email || "");
+  const [isEmailOpen, setIsEmailOpen] = useState(false);
   
   // Estados de controle e salvamento
   const [isSaving, setIsSaving] = useState(false);
@@ -314,6 +317,7 @@ export function QuoteForm({
       clientName,
       clientPhone,
       clientAddress,
+      clientEmail,
       items,
       paymentMethod,
       installments,
@@ -359,10 +363,12 @@ export function QuoteForm({
                     setClientName(client.name);
                     setClientPhone(client.phone || "");
                     setClientAddress(client.address || "");
+                    setClientEmail(client.email || "");
                   } else {
                     setClientName("");
                     setClientPhone("");
                     setClientAddress("");
+                    setClientEmail("");
                   }
                 }}
               >
@@ -393,6 +399,16 @@ export function QuoteForm({
                 value={clientPhone}
                 onChange={(e) => setClientPhone(e.target.value)}
                 readOnly={!!selectedClientId}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-heading font-bold text-slate-500 uppercase tracking-widest mb-2">E-mail (para enviar o orçamento)</label>
+              <input
+                type="email"
+                className="w-full bg-white border border-border rounded-lg p-3 text-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none font-comfortaa text-sm"
+                placeholder="cliente@email.com"
+                value={clientEmail}
+                onChange={(e) => setClientEmail(e.target.value)}
               />
             </div>
             <div>
@@ -953,6 +969,24 @@ export function QuoteForm({
                     loading ? 'Gerando PDF...' : <><Download className="w-5 h-5"/> Baixar PDF do Orçamento</>
                   )}
                 </PDFDownloadLink>
+
+                <button
+                  type="button"
+                  onClick={() => setIsEmailOpen(true)}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-heading font-bold uppercase tracking-widest py-3.5 rounded-xl flex items-center justify-center gap-2 text-sm transition-colors"
+                >
+                  <Mail className="w-5 h-5" /> Enviar por e-mail
+                </button>
+
+                {isEmailOpen && savedQuoteId && (
+                  <SendQuoteEmailDialog
+                    quoteId={savedQuoteId}
+                    clientName={clientName}
+                    defaultEmail={clientEmail}
+                    onClose={() => setIsEmailOpen(false)}
+                    onSent={({ email }) => setClientEmail(email)}
+                  />
+                )}
 
                 <button 
                   onClick={() => setSavedQuoteId(null)}
