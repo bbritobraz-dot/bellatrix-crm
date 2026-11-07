@@ -1,9 +1,10 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createAuthedClient } from "@/lib/supabase/server";
+import { adjustBankBalance, getOrCreateExpenseCategoryId } from "@/lib/finance/helpers";
 
 export async function saveQuote(data: any) {
-  const supabase = await createClient();
+  const supabase = await createAuthedClient();
 
   try {
     let clientId = data.clientId;
@@ -148,7 +149,7 @@ async function replaceQuoteItems(supabase: any, quoteId: string, items: any[]) {
 }
 
 export async function updateQuote(quoteId: string, data: any) {
-  const supabase = await createClient();
+  const supabase = await createAuthedClient();
 
   try {
     if (!quoteId) throw new Error("Orçamento inválido.");
@@ -211,7 +212,7 @@ export async function updateQuote(quoteId: string, data: any) {
 }
 
 export async function getQuotes(statusFilters?: string[]) {
-  const supabase = await createClient();
+  const supabase = await createAuthedClient();
   let query = supabase
     .from('quotes')
     .select(`
@@ -275,7 +276,7 @@ export async function moveToProduction(id: string, supplierData?: {
   paymentMethod: string;
   bankAccountId?: string;
 }) {
-  const supabase = await createClient();
+  const supabase = await createAuthedClient();
   const now = new Date();
   const forecastDate = addBusinessDays(now, 10); // 10 dias úteis para entrega
   const supplierDeadline = addBusinessDays(now, 10); // prazo de pagamento ao fornecedor
@@ -311,15 +312,11 @@ export async function moveToProduction(id: string, supplierData?: {
 
   // Registrar automaticamente apenas o que foi pago AGORA como despesa realizada
   if (supplierData && supplierData.supplierPaid > 0 && supplierData.bankAccountId) {
-    const { data: category } = await supabase
-      .from('expense_categories')
-      .select('id')
-      .eq('name', 'Custo de Produtos')
-      .single();
+    const categoryId = await getOrCreateExpenseCategoryId(supabase, 'Custo de Produtos');
 
-    if (category) {
+    if (categoryId) {
       await supabase.from('expenses').insert({
-        category_id: category.id,
+        category_id: categoryId,
         description: `Entrada/Sinal Fornecedor - Pedido ${id.split('-')[0].toUpperCase()}`,
         amount: supplierData.supplierPaid,
         date: now.toISOString(),
@@ -331,21 +328,18 @@ export async function moveToProduction(id: string, supplierData?: {
         bank_account_id: supplierData.bankAccountId,
         notes: `Pagamento inicial ao fornecedor referente ao pedido ${id}. Total do custo: R$ ${supplierData.supplierCostTotal.toFixed(2)}`
       });
-
-      // Atualizar o saldo da conta bancária (Descontar)
-      const { data: bank } = await supabase.from("bank_accounts").select("balance").eq("id", supplierData.bankAccountId).single();
-      if (bank) {
-        const newBalance = Number(bank.balance) - Number(supplierData.supplierPaid);
-        await supabase.from("bank_accounts").update({ balance: newBalance, updated_at: new Date().toISOString() }).eq("id", supplierData.bankAccountId);
-      }
     }
+
+    // Descontar do saldo da conta (atômico), mesmo se a despesa não puder ser registrada
+    const balanceError = await adjustBankBalance(supabase, supplierData.bankAccountId, -Number(supplierData.supplierPaid));
+    if (balanceError) return { success: false, error: balanceError };
   }
 
   return { success: true };
 }
 
 export async function reopenQuote(quoteId: string) {
-  const supabase = await createClient();
+  const supabase = await createAuthedClient();
   const { error } = await supabase
     .from('quotes')
     .update({ status: 'rascunho' })
@@ -356,7 +350,7 @@ export async function reopenQuote(quoteId: string) {
 }
 
 export async function updateQuoteStatus(quoteId: string, status: string) {
-  const supabase = await createClient();
+  const supabase = await createAuthedClient();
   const { error } = await supabase
     .from('quotes')
     .update({ status })
@@ -367,7 +361,7 @@ export async function updateQuoteStatus(quoteId: string, status: string) {
 }
 
 export async function scheduleInstallation(id: string, date: string, time: string) {
-  const supabase = await createClient();
+  const supabase = await createAuthedClient();
 
   const { error } = await supabase
     .from('quotes')
@@ -382,7 +376,7 @@ export async function scheduleInstallation(id: string, date: string, time: strin
 }
 
 export async function finishOrder(id: string) {
-  const supabase = await createClient();
+  const supabase = await createAuthedClient();
   const now = new Date();
   const warrantyEndDate = new Date();
   warrantyEndDate.setFullYear(warrantyEndDate.getFullYear() + 1); // 1 ano de garantia

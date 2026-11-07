@@ -1,10 +1,10 @@
-import { createClient } from "@/lib/supabase/server";
+import { createAuthedClient } from "@/lib/supabase/server";
 import { AgendaClientView } from "@/components/agenda/AgendaClientView";
 
 export const dynamic = 'force-dynamic';
 
 export default async function AgendaPage() {
-  const supabase = await createClient();
+  const supabase = await createAuthedClient();
 
   const { data: visits, error } = await supabase
     .from("visits")

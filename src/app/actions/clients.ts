@@ -1,10 +1,10 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createAuthedClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
 export async function saveClient(data: any) {
-  const supabase = await createClient();
+  const supabase = await createAuthedClient();
 
   try {
     const { data: newClient, error } = await supabase
@@ -35,7 +35,7 @@ export async function saveClient(data: any) {
 }
 
 export async function deleteClient(id: string) {
-  const supabase = await createClient();
+  const supabase = await createAuthedClient();
   try {
     const { error } = await supabase.from('clients').delete().eq('id', id);
     if (error) throw new Error(error.message);
@@ -47,7 +47,7 @@ export async function deleteClient(id: string) {
 }
 
 export async function updateClientStatus(id: string, newStatus: string) {
-  const supabase = await createClient();
+  const supabase = await createAuthedClient();
   try {
     const { error } = await supabase
       .from('clients')
@@ -65,7 +65,7 @@ export async function updateClientStatus(id: string, newStatus: string) {
 }
 
 export async function markClientLost(id: string, reason: string) {
-  const supabase = await createClient();
+  const supabase = await createAuthedClient();
   try {
     // 1. Busca notas atuais
     const { data: client } = await supabase.from('clients').select('notes').eq('id', id).single();
@@ -89,7 +89,7 @@ export async function markClientLost(id: string, reason: string) {
 }
 
 export async function updateClient(id: string, data: any) {
-  const supabase = await createClient();
+  const supabase = await createAuthedClient();
   try {
     const { error } = await supabase
       .from('clients')

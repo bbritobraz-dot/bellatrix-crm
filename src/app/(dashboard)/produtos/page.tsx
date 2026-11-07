@@ -1,10 +1,10 @@
-import { createClient } from "@/lib/supabase/server";
+import { createAuthedClient } from "@/lib/supabase/server";
 import { CatalogView } from "@/components/products/CatalogView";
 
 export const dynamic = 'force-dynamic';
 
 export default async function CatalogPage() {
-  const supabase = await createClient();
+  const supabase = await createAuthedClient();
 
   // Buscar todos os catálogos
   const { data: products, error: e1 } = await supabase.from("products").select("*").order("line", { ascending: true });

@@ -1,11 +1,11 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createAuthedClient } from "@/lib/supabase/server";
 
 const SALES_STATUSES = ['aprovado', 'em_producao', 'pronto_para_instalacao', 'finalizado'];
 
 export async function getDashboardStats(startDate?: string, endDate?: string) {
-  const supabase = await createClient();
+  const supabase = await createAuthedClient();
   const today = new Date().toISOString().split('T')[0];
 
   let quotesQuery = supabase.from('quotes').select(`
