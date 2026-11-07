@@ -1,4 +1,5 @@
 "use client";
+import { notify } from "@/lib/notify";
 
 import { useState, useEffect } from "react";
 import { CheckCircle, X } from "lucide-react";
@@ -27,7 +28,7 @@ export function FinishModal({ quote, bankAccounts, onClose, onSuccess }: FinishM
 
   const handleFinish = async () => {
     if (finishAmount && Number(finishAmount) > 0 && !finishBankId) {
-      alert("Por favor, selecione a conta bancária para receber o saldo.");
+      notify.warning("Por favor, selecione a conta bancária para receber o saldo.");
       return;
     }
     setIsFinishing(true);
@@ -41,7 +42,7 @@ export function FinishModal({ quote, bankAccounts, onClose, onSuccess }: FinishM
         installments: finishMethod === 'Cartão de Crédito' ? finishInstallments : undefined,
       } : undefined);
       if (!finishRes.success) {
-        alert("Não foi possível finalizar: " + finishRes.error + "\nNada foi registrado.");
+        notify.error("Não foi possível finalizar: " + finishRes.error + "\nNada foi registrado.");
         return;
       }
       if (amount > 0) {
@@ -50,9 +51,9 @@ export function FinishModal({ quote, bankAccounts, onClose, onSuccess }: FinishM
       }
       onSuccess(quote.id);
       onClose();
-      alert("Instalação concluída e Garantia ativada!");
+      notify.success("Instalação concluída e Garantia ativada!");
     } catch { 
-      alert("Erro ao finalizar o pedido."); 
+      notify.error("Erro ao finalizar o pedido."); 
     } finally { 
       setIsFinishing(false); 
     }

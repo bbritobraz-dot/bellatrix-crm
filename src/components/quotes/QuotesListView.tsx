@@ -1,4 +1,5 @@
 "use client";
+import { notify, confirmDialog } from "@/lib/notify";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -149,7 +150,7 @@ export function QuotesListView({ initialQuotes, bankAccounts }: { initialQuotes:
       if ((autoSupplierCost > 0 && Number(supplierPaid) > 0 && !finalSupplierBankId) || 
           (Number(clientSignal) > 0 && !finalClientBankId)) {
         setIsProcessing(false);
-        alert("Selecione as contas bancárias correspondentes para os pagamentos.");
+        notify.warning("Selecione as contas bancárias correspondentes para os pagamentos.");
         return;
       }
 
@@ -162,7 +163,7 @@ export function QuotesListView({ initialQuotes, bankAccounts }: { initialQuotes:
 
       if (!productionResult.success) {
         setIsProcessing(false);
-        alert("Erro ao enviar pedido para produção: " + productionResult.error);
+        notify.error("Erro ao enviar pedido para produção: " + productionResult.error);
         return;
       }
 
@@ -181,7 +182,7 @@ export function QuotesListView({ initialQuotes, bankAccounts }: { initialQuotes:
           setQuotes(quotes.filter(q => q.id !== selectedQuote.id));
           setIsModalOpen(false);
           setIsProcessing(false);
-          alert("Pedido foi enviado para produção, mas o sinal do cliente não foi registrado: " + paymentResult.error);
+          notify.error("Pedido foi enviado para produção, mas o sinal do cliente não foi registrado: " + paymentResult.error);
           return;
         }
 
@@ -201,22 +202,22 @@ export function QuotesListView({ initialQuotes, bankAccounts }: { initialQuotes:
       setQuotes(quotes.filter(q => q.id !== selectedQuote.id));
       setIsModalOpen(false);
       setIsProcessing(false);
-      window.setTimeout(() => alert("Pedido enviado para produção com sucesso!"), 0);
+      notify.success("Pedido enviado para produção!");
     } catch (error: any) {
       setIsProcessing(false);
-      alert("Erro ao enviar pedido para produção: " + (error?.message || "tente novamente."));
+      notify.error("Erro ao enviar pedido para produção: " + (error?.message || "tente novamente."));
     } finally {
       setIsProcessing(false);
     }
   };
 
   const handleDelete = async (quote: any) => {
-    if (!confirm(`Excluir o orçamento #${quote.id.split('-')[0].toUpperCase()} de ${quote.client?.name || "cliente"}?\n\nEssa ação não pode ser desfeita.`)) return;
+    if (!(await confirmDialog({ danger: true, message: `Excluir o orçamento #${quote.id.split('-')[0].toUpperCase()} de ${quote.client?.name || "cliente"}?\n\nEssa ação não pode ser desfeita.` }))) return;
     const res = await deleteQuote(quote.id);
     if (res.success) {
       setQuotes(quotes.filter(q => q.id !== quote.id));
     } else {
-      alert(res.error);
+      notify.error(res.error);
     }
   };
 
@@ -225,19 +226,19 @@ export function QuotesListView({ initialQuotes, bankAccounts }: { initialQuotes:
     try {
       await downloadQuotePdf(quote);
     } catch (e: any) {
-      alert("Erro ao gerar PDF: " + (e?.message || "tente novamente"));
+      notify.error("Erro ao gerar PDF: " + (e?.message || "tente novamente"));
     } finally {
       setPdfLoadingId(null);
     }
   };
 
   const handleStatusUpdate = async (quoteId: string, status: string) => {
-    if (!confirm(`Deseja alterar o status para ${status}?`)) return;
+    if (!(await confirmDialog({ message: `Alterar o status do orçamento para "${status}"?`, confirmLabel: "Alterar" }))) return;
     const res = await updateQuoteStatus(quoteId, status);
     if (res.success) {
       setQuotes(quotes.map(q => q.id === quoteId ? { ...q, status } : q));
     } else {
-      alert("Erro ao atualizar status: " + res.error);
+      notify.error("Erro ao atualizar status: " + res.error);
     }
   };
 

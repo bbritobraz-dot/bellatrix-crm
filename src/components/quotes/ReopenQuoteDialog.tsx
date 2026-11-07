@@ -1,4 +1,5 @@
 "use client";
+import { notify, confirmDialog } from "@/lib/notify";
 
 import { useState } from "react";
 import { RotateCcw, XCircle } from "lucide-react";
@@ -25,16 +26,16 @@ export function ReopenQuoteDialog({
   const hasPayments = received > 0 || supplierPaid > 0;
 
   const run = async (reverse: boolean) => {
-    if (reverse && !confirm(
+    if (reverse && !(await confirmDialog({ title: "Estornar pagamentos", danger: true, confirmLabel: "Estornar", message:
       `Estornar ${received > 0 ? `${money(received)} recebidos do cliente` : ""}` +
       `${received > 0 && supplierPaid > 0 ? " e " : ""}` +
       `${supplierPaid > 0 ? `${money(supplierPaid)} pagos à fábrica` : ""}?\n\n` +
       "Os valores voltam para as contas bancárias de origem e os lançamentos são apagados. Não dá para desfazer."
-    )) return;
+    }))) return;
     setBusy(true);
     const res = await reopenQuote(quote.id, reverse);
     setBusy(false);
-    if (!res.success) { alert("Erro ao reabrir: " + res.error); return; }
+    if (!res.success) { notify.error("Erro ao reabrir: " + res.error); return; }
     onDone(quote.id);
     onClose();
   };

@@ -1,4 +1,5 @@
 "use client";
+import { notify, confirmDialog } from "@/lib/notify";
 
 import { useState } from "react";
 import { Search, Package, Wrench, Settings, Edit3, X, Check, Trash2, Plus } from "lucide-react";
@@ -57,7 +58,7 @@ export function CatalogView({
     const r = await updateCatalogItem(table, editingId, payload);
     
     if (!r.success) {
-      alert("Erro ao salvar: " + r.error);
+      notify.error("Erro ao salvar: " + r.error);
     }
     
     setIsProcessing(false);
@@ -65,10 +66,10 @@ export function CatalogView({
   };
 
   const handleDelete = async (table: Tab, id: string) => {
-    if (!confirm("Tem certeza que deseja excluir este item?")) return;
+    if (!(await confirmDialog({ message: "Tem certeza que deseja excluir este item do catálogo?", danger: true }))) return;
     setIsProcessing(true);
     const r = await deleteCatalogItem(table, id);
-    if (!r.success) alert("Erro ao excluir: " + r.error);
+    if (!r.success) notify.error("Erro ao excluir: " + r.error);
     setIsProcessing(false);
   };
 

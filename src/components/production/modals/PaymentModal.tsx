@@ -1,4 +1,5 @@
 "use client";
+import { notify } from "@/lib/notify";
 
 import { useState } from "react";
 import { DollarSign, Printer, X } from "lucide-react";
@@ -22,7 +23,7 @@ export function PaymentModal({ quote, bankAccounts, onClose, onSuccess }: Paymen
 
   const handleRegisterPayment = async () => {
     if (!payAmount || Number(payAmount) <= 0 || !bankAccountId) {
-      alert("Por favor, preencha o valor e selecione a conta bancária.");
+      notify.warning("Por favor, preencha o valor e selecione a conta bancária.");
       return;
     }
     setIsPaying(true);
@@ -47,10 +48,10 @@ export function PaymentModal({ quote, bankAccounts, onClose, onSuccess }: Paymen
         onSuccess(quote.id, paidNow);
         onClose();
       } else {
-        alert("Erro ao registrar pagamento.");
+        notify.error("Erro ao registrar pagamento.");
       }
     } catch { 
-      alert("Erro ao registrar pagamento."); 
+      notify.error("Erro ao registrar pagamento."); 
     } finally { 
       setIsPaying(false); 
     }
