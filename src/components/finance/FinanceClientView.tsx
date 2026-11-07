@@ -36,6 +36,7 @@ export function FinanceClientView({
   initialBankAccounts: any[];
   initialCardFeeSettings: any[];
 }) {
+  const [categories, setCategories] = useState(initialCategories);
   const [activeTab, setActiveTab] = useState<Tab>("dashboard");
   const [expenses, setExpenses] = useState(initialExpenses);
   const [payments, setPayments] = useState(initialPayments);
@@ -124,7 +125,7 @@ export function FinanceClientView({
         <PayablesTab payables={payables} bankAccounts={initialBankAccounts} />
       )}
       {activeTab === "categorias" && (
-        <CategoriesTab categories={initialCategories} setCategories={() => {}} />
+        <CategoriesTab categories={categories} setCategories={setCategories} />
       )}
       {activeTab === "configuracoes" && (
         <SettingsTab initialSettings={cardFeeSettings} />
