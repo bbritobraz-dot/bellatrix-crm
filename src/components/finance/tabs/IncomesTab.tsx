@@ -1,82 +1,13 @@
 "use client";
+import { printReceipt } from "@/lib/utils/print";
 import { notify, confirmDialog } from "@/lib/notify";
 import { useState } from "react";
 import { Plus, Calendar, Printer } from "lucide-react";
 import { registerPayment } from "@/app/actions/finance";
 import { BankAccountSelect } from "../BankAccountSelect";
 
-function printReceipt(clientName: string, amount: number, method: string, description: string, remainingBalance: number = 0) {
-  const win = window.open("", "_blank", "width=800,height=900");
-  if (!win) return;
-  const dateStr = new Date().toLocaleDateString("pt-BR");
 
-  win.document.write(`
-    <!DOCTYPE html>
-    <html lang="pt-BR">
-    <head>
-      <meta charset="UTF-8" />
-      <title>Recibo Bellatrix - ${clientName}</title>
-      <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
-        body { font-family: 'Inter', sans-serif; padding: 40px; color: #1e293b; max-width: 700px; margin: auto; line-height: 1.5; }
-        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 20px; margin-bottom: 20px; }
-        .company-info { text-align: center; flex: 1; }
-        .contacts { text-align: right; }
-        .logo { width: 100px; height: auto; }
-        .doc-info-bar { background: #f8fafc; padding: 10px; border-radius: 6px; margin-bottom: 12px; display: flex; justify-content: center; align-items: center; gap: 10px; font-size: 11px; }
-        .doc-info-bar b { color: #0ea5e9; }
-        .client-info-bar { border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; margin-bottom: 30px; display: flex; align-items: center; gap: 10px; font-size: 11px; }
-        .separator { color: #94a3b8; }
-        .content { margin: 40px 0; text-align: center; }
-        .amount-box { background: #f0fdf4; border: 2px solid #bbf7d0; color: #15803d; padding: 25px; border-radius: 12px; display: inline-block; margin: 20px 0; }
-        .amount-value { font-size: 32px; font-weight: 800; }
-        .balance-info { margin-top: 10px; font-size: 13px; color: #64748b; font-weight: 500; }
-        .signature-section { margin-top: 50px; text-align: center; }
-        .signature-img { width: 120px; margin-bottom: 5px; }
-        .signature-line { width: 160px; border-top: 1px solid #e2e8f0; margin: 0 auto; }
-        .footer { text-align: center; font-size: 10px; color: #94a3b8; margin-top: 60px; }
-        @media print { .print-btn { display: none; } }
-        .print-btn { display: block; margin: 40px auto; padding: 12px 30px; background: #0ea5e9; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
-      </style>
-    </head>
-    <body>
-      <div class="header">
-        <div style="width: 25%"><img src="/logo.png" class="logo" /></div>
-        <div class="company-info">
-          <div style="font-weight: bold; font-size: 14px; color: #1e293b;">Persianas Bellatrix</div>
-          <div style="font-size: 9px; color: #64748b;">CNPJ: 47.214.728/0001-80 | Foz do Iguaçu/PR</div>
-        </div>
-        <div class="contacts" style="width: 30%">
-          <div style="font-size: 9px; color: #64748b;">+55 45 98808 9137</div>
-        </div>
-      </div>
-      <div class="doc-info-bar"><b>RECIBO DE PAGAMENTO</b><span class="separator">|</span><span>Data: ${dateStr}</span></div>
-      <div class="client-info-bar"><b>CLIENTE</b><span class="separator">|</span><span style="font-weight:bold">${clientName}</span><span class="separator">|</span><span style="text-transform:capitalize">Meio: ${method}</span></div>
-      <div class="content">
-        <div style="font-size: 20px; font-weight: bold; margin-bottom: 10px;">Comprovante de Recebimento</div>
-        <div style="font-size: 13px; color: #475569;">Referente a: ${description}</div>
-        <div class="amount-box">
-          <div style="font-size: 10px; text-transform: uppercase; margin-bottom: 5px;">Valor Recebido</div>
-          <div class="amount-value">R$ ${amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-        </div>
-        ${remainingBalance > 0 ? `
-          <div class="balance-info">Saldo devedor restante: <span style="color: #ef4444;">R$ ${remainingBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span></div>
-        ` : description.includes('Pedido') ? `
-          <div class="balance-info" style="color: #10b981;">✅ Pagamento Total Realizado</div>
-        ` : ''}
-      </div>
-      <div class="signature-section">
-        <img src="/assignature.png" class="signature-img" />
-        <div class="signature-line"></div>
-        <div style="font-size: 10px; color: #64748b; margin-top: 5px;">Responsável Bellatrix</div>
-      </div>
-      <div class="footer">Persianas Bellatrix - Transformando ambientes com elegância e sofisticação.</div>
-      <button class="print-btn" onclick="window.print()">🖨️ Imprimir Recibo</button>
-    </body>
-    </html>
-  `);
-  win.document.close();
-}
+const toNoonDate = (d: string) => (/^\d{4}-\d{2}-\d{2}$/.test(d) ? `${d}T12:00:00-03:00` : d);
 
 export function IncomesTab({ payments, setPayments, bankAccounts }: {
   payments: any[]; setPayments: any; bankAccounts: any[];
@@ -107,7 +38,7 @@ export function IncomesTab({ payments, setPayments, bankAccounts }: {
       setIsOpen(false); setDesc(""); setAmount(""); setBankAccountId("");
       
       if (await confirmDialog({ title: "Pagamento registrado", message: "Deseja emitir o recibo agora?", confirmLabel: "Emitir recibo", cancelLabel: "Agora não" })) {
-        printReceipt("Cliente Avulso", Number(amount), method, desc);
+        printReceipt({ clientName: "Cliente Avulso", amount: Number(amount), method, reference: desc, date: toNoonDate(date), title: "Comprovante de Pagamento" });
       }
     }
     setIsSaving(false);
@@ -154,13 +85,16 @@ export function IncomesTab({ payments, setPayments, bankAccounts }: {
                 <td className="px-5 py-3 text-right font-semibold text-emerald-600" data-label="Valor">+ R$ {Number(p.amount).toFixed(2)}</td>
                 <td className="px-5 py-3 text-center" data-label="Recibo">
                   <button 
-                    onClick={() => printReceipt(
-                      p.client?.name || p.quote?.client?.name || "Cliente Bellatrix", 
-                      Number(p.amount), 
-                      p.payment_method, 
-                      p.manual_description || `Pagamento Ref. Pedido #${p.quote_id?.split("-")[0].toUpperCase() || '—'}`,
-                      p.quote?.pending_amount || 0
-                    )}
+                    onClick={() => printReceipt({
+                      clientName: p.client?.name || p.quote?.client?.name || "Cliente Bellatrix",
+                      amount: Number(p.amount),
+                      method: p.payment_method,
+                      reference: p.manual_description || p.quote_id || undefined,
+                      date: p.payment_date,
+                      title: "Comprovante de Pagamento",
+                      // reimpressão: o saldo atual não é o saldo da época, então não é exibido
+                      remainingBalance: null,
+                    })}
                     className="p-1.5 hover:bg-slate-100 rounded-lg text-blue-600 transition-colors"
                     title="Imprimir Recibo"
                   >

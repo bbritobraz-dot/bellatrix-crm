@@ -1,4 +1,5 @@
 "use client";
+import { round2 } from "@/lib/money";
 import { notify } from "@/lib/notify";
 
 import { useState } from "react";
@@ -42,9 +43,16 @@ export function PaymentModal({ quote, bankAccounts, onClose, onSuccess }: Paymen
         const total = Number(quote.total_sale_price || 0);
         const paidBefore = Number(quote.total_paid || 0);
         const paidNow = Number(payAmount || 0);
-        const newPending = Math.max(total - (paidBefore + paidNow), 0);
+        const newPending = round2(Math.max(total - (paidBefore + paidNow), 0));
 
-        printReceipt(quote.client?.name || "Cliente", paidNow, payMethod, quote.id, newPending);
+        if (!printReceipt({
+          clientName: quote.client?.name || "Cliente",
+          amount: paidNow,
+          method: payMethod,
+          reference: quote.id,
+          title: newPending > 0 ? "Comprovante de Pagamento" : "Comprovante de Quitação",
+          remainingBalance: newPending,
+        })) notify.warning("O navegador bloqueou a janela do recibo. Permita pop-ups para este site.");
         onSuccess(quote.id, paidNow);
         onClose();
       } else {

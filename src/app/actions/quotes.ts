@@ -2,6 +2,7 @@
 
 import { createAuthedClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { round2 } from "@/lib/money";
 
 const onlyDigits = (value?: string) => (value || "").replace(/\D/g, "");
 
@@ -54,8 +55,8 @@ async function insertQuoteItems(supabase: any, quoteId: string, items: any[]): P
           height_m: item.height,
           quantity: item.quantity,
           charged_area_m2: item.chargedArea,
-          supplier_cost_total: item.supplierCostTotal,
-          sale_price_total: item.salePriceTotal,
+          supplier_cost_total: round2(item.supplierCostTotal),
+          sale_price_total: round2(item.salePriceTotal),
           margin_percent: item.marginPercent,
           notes: item.notes || '',
           color: item.color || null,
@@ -77,8 +78,8 @@ async function insertQuoteItems(supabase: any, quoteId: string, items: any[]): P
           quantity: acc.quantity,
           // acc.cost / acc.salePrice são por unidade de acessório em UMA peça do produto;
           // o total precisa multiplicar também pela quantidade de peças (antes faltava isso).
-          supplier_cost_total: Number(acc.cost || 0) * acc.quantity * itemQty,
-          sale_price_total: acc.salePrice != null ? Number(acc.salePrice) * acc.quantity * itemQty : null
+          supplier_cost_total: round2(Number(acc.cost || 0) * acc.quantity * itemQty),
+          sale_price_total: acc.salePrice != null ? round2(Number(acc.salePrice) * acc.quantity * itemQty) : null
         }));
 
         const { error: accError } = await supabase
@@ -112,7 +113,7 @@ export async function saveQuote(data: any) {
       .insert({
         client_id: clientId,
         status: 'rascunho',
-        total_sale_price: data.globalSalePrice,
+        total_sale_price: round2(data.globalSalePrice),
         discount_amount: data.discountType === 'value' ? data.discountValue : 0,
         discount_percent: data.discountType === 'percent' ? data.discountValue : 0,
         payment_conditions: `${data.paymentMethod} - ${data.installments}x`,
@@ -204,7 +205,7 @@ export async function updateQuote(quoteId: string, data: any) {
       .from('quotes')
       .update({
         status: 'rascunho',
-        total_sale_price: data.globalSalePrice,
+        total_sale_price: round2(data.globalSalePrice),
         discount_amount: data.discountType === 'value' ? data.discountValue : 0,
         discount_percent: data.discountType === 'percent' ? data.discountValue : 0,
         supplier_cost_total: 0,
@@ -282,7 +283,7 @@ export async function getQuotes(statusFilters?: string[]) {
     const computed_supplier_cost = Number(q.supplier_cost_total) > 0
       ? Number(q.supplier_cost_total)
       : itemsCostSum;
-    return { ...q, computed_supplier_cost };
+    return { ...q, computed_supplier_cost: round2(computed_supplier_cost) };
   });
 }
 

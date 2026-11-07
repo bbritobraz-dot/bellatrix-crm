@@ -1,103 +1,12 @@
 "use client";
+import { round2 } from "@/lib/money";
+import { printReceipt } from "@/lib/utils/print";
 import { notify } from "@/lib/notify";
 import { useState } from "react";
 import { TrendingUp, User, Printer } from "lucide-react";
 import { registerClientPayment } from "@/app/actions/finance";
 import { BankAccountSelect } from "../BankAccountSelect";
 
-function printReceipt(clientName: string, amount: number, method: string, quoteId: string, remainingBalance: number = 0) {
-  const win = window.open("", "_blank", "width=800,height=900");
-  if (!win) return;
-  const date = new Date().toLocaleDateString("pt-BR");
-  const time = new Date().toLocaleTimeString("pt-BR");
-  const ref = quoteId.split("-")[0].toUpperCase();
-
-  win.document.write(`
-    <!DOCTYPE html>
-    <html lang="pt-BR">
-    <head>
-      <meta charset="UTF-8" />
-      <title>Recibo Bellatrix - ${clientName}</title>
-      <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
-        body { font-family: 'Inter', sans-serif; padding: 40px; color: #051C2C; max-width: 700px; margin: auto; line-height: 1.5; background: #ffffff; }
-        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 20px; margin-bottom: 20px; }
-        .company-info { text-align: center; flex: 1; }
-        .contacts { text-align: right; }
-        .logo { width: 100px; height: auto; }
-        .doc-info-bar { background: #051C2C; color: #ffffff; padding: 12px; border-radius: 8px; margin-bottom: 15px; display: flex; justify-content: center; align-items: center; gap: 15px; font-size: 12px; }
-        .doc-info-bar b { color: #0accef; }
-        .client-info-bar { border-bottom: 1px solid #f1f5f9; padding-bottom: 12px; margin-bottom: 35px; display: flex; align-items: center; gap: 15px; font-size: 12px; }
-        .separator { color: #94a3b8; }
-        .content { margin: 40px 0; text-align: center; }
-        .receipt-title { font-size: 26px; font-weight: bold; color: #1e293b; margin-bottom: 15px; }
-        .amount-box { background: #f0fdf4; border: 2px solid #bbf7d0; color: #15803d; padding: 30px; border-radius: 15px; display: inline-block; margin: 25px 0; min-width: 250px; }
-        .amount-value { font-size: 38px; font-weight: 800; }
-        
-        .balance-section { margin-top: 25px; padding: 15px; border-radius: 10px; background: #fef2f2; border: 1px solid #fee2e2; display: inline-block; min-width: 300px; }
-        .balance-label { font-size: 11px; text-transform: uppercase; color: #991b1b; letter-spacing: 1px; margin-bottom: 5px; font-weight: bold; }
-        .balance-value { font-size: 20px; font-weight: bold; color: #dc2626; }
-        
-        .success-section { margin-top: 25px; padding: 15px; border-radius: 10px; background: #ecfdf5; border: 1px solid #d1fae5; color: #065f46; font-weight: bold; display: inline-block; min-width: 300px; }
-
-        .signature-section { margin-top: 60px; text-align: center; }
-        .signature-img { width: 130px; margin-bottom: 5px; }
-        .signature-line { width: 180px; border-top: 1px solid #e2e8f0; margin: 0 auto; }
-        .footer { text-align: center; font-size: 10px; color: #94a3b8; margin-top: 60px; }
-        @media print { .print-btn { display: none; } }
-        .print-btn { display: block; margin: 40px auto; padding: 12px 35px; background: #0ea5e9; color: #fff; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 16px; }
-      </style>
-    </head>
-    <body>
-      <div class="header">
-        <div style="width: 25%"><img src="/logo.png" class="logo" /></div>
-        <div class="company-info">
-          <div style="font-weight: bold; font-size: 16px;">Persianas Bellatrix</div>
-          <div style="font-size: 10px; color: #64748b;">CNPJ: 47.214.728/0001-80 | Foz do Iguaçu/PR</div>
-        </div>
-        <div class="contacts" style="width: 30%"><div style="font-size: 10px; color: #64748b;">+55 45 98808 9137</div></div>
-      </div>
-      
-      <div class="doc-info-bar"><b>RECIBO DE PAGAMENTO</b><span class="separator">|</span><span>Ref: #${ref}</span><span class="separator">|</span><span>Data: ${date}</span></div>
-      
-      <div class="client-info-bar"><b>CLIENTE</b><span class="separator">|</span><span style="font-weight:bold">${clientName}</span><span class="separator">|</span><span style="text-transform:capitalize">Meio: ${method}</span></div>
-      
-      <div class="content">
-        <div class="receipt-title">Comprovante de Recebimento</div>
-        
-        <div class="amount-box">
-          <div style="font-size: 11px; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px;">Valor Recebido</div>
-          <div class="amount-value">R$ ${amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-        </div>
-
-        <br/>
-
-        ${remainingBalance > 0 ? `
-          <div class="balance-section">
-            <div class="balance-label">Saldo Devedor Restante</div>
-            <div class="balance-value">R$ ${remainingBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-          </div>
-        ` : `
-          <div class="success-section">
-            ✅ PEDIDO TOTALMENTE QUITADO
-          </div>
-        `}
-      </div>
-
-      <div class="signature-section">
-        <img src="/assignature.png" class="signature-img" />
-        <div class="signature-line"></div>
-        <div style="font-size: 11px; color: #64748b; margin-top: 8px; font-weight: 500;">Responsável Bellatrix</div>
-      </div>
-      
-      <div class="footer">Obrigado pela preferência! Persianas Bellatrix transforma sua casa com elegância.</div>
-      
-      <button class="print-btn" onclick="window.print()">🖨️ Imprimir Recibo</button>
-    </body>
-    </html>
-  `);
-  win.document.close();
-}
 
 export function ReceivablesTab({ receivables, bankAccounts }: { receivables: any[]; bankAccounts: any[] }) {
   const [items, setItems] = useState(receivables);
@@ -143,16 +52,17 @@ export function ReceivablesTab({ receivables, bankAccounts }: { receivables: any
     if (res.success) {
       const currentPending = Number(modal.pending_amount || 0);
       const paidNow = Number(payAmount || 0);
-      const newPending = Math.max(currentPending - paidNow, 0);
+      const newPending = round2(Math.max(currentPending - paidNow, 0));
 
       // Imprimir recibo com o saldo ATUALIZADO
-      printReceipt(
-        modal.client?.name || "Cliente", 
-        paidNow, 
-        payMethod, 
-        modal.id, 
-        newPending
-      );
+      if (!printReceipt({
+        clientName: modal.client?.name || "Cliente",
+        amount: paidNow,
+        method: payMethod,
+        reference: modal.id,
+        title: newPending > 0 ? "Comprovante de Pagamento" : "Comprovante de Quitação",
+        remainingBalance: newPending,
+      })) notify.warning("O navegador bloqueou a janela do recibo. Permita pop-ups para este site.");
 
       if (newPending <= 0) {
         setItems(items.filter(r => r.id !== modal.id));

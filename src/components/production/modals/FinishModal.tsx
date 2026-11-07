@@ -1,4 +1,5 @@
 "use client";
+import { round2 } from "@/lib/money";
 import { notify } from "@/lib/notify";
 
 import { useState, useEffect } from "react";
@@ -22,7 +23,7 @@ export function FinishModal({ quote, bankAccounts, onClose, onSuccess }: FinishM
   const [isFinishing, setIsFinishing] = useState(false);
 
   useEffect(() => {
-    const saldo = Math.max(Number(quote.total_sale_price) - Number(quote.total_paid || 0), 0);
+    const saldo = round2(Math.max(Number(quote.total_sale_price) - Number(quote.total_paid || 0), 0));
     setFinishAmount(saldo > 0 ? saldo : "");
   }, [quote]);
 
@@ -46,8 +47,15 @@ export function FinishModal({ quote, bankAccounts, onClose, onSuccess }: FinishM
         return;
       }
       if (amount > 0) {
-        const remaining = Math.max(Number(quote.total_sale_price) - Number(quote.total_paid || 0) - amount, 0);
-        printReceipt(quote.client?.name || "Cliente", amount, finishMethod, quote.id, remaining);
+        const remaining = round2(Math.max(Number(quote.total_sale_price) - Number(quote.total_paid || 0) - amount, 0));
+        if (!printReceipt({
+          clientName: quote.client?.name || "Cliente",
+          amount,
+          method: finishMethod,
+          reference: quote.id,
+          title: remaining > 0 ? "Comprovante de Pagamento" : "Comprovante de Quitação",
+          remainingBalance: remaining,
+        })) notify.warning("O navegador bloqueou a janela do recibo. Permita pop-ups para este site.");
       }
       onSuccess(quote.id);
       onClose();
