@@ -69,8 +69,8 @@ export function QuoteForm({
           accessory,
           quantity: Number(acc.quantity || 1),
           charged: 0,
-          cost: Number(acc.supplier_cost_total || 0) / Math.max(Number(acc.quantity || 1), 1),
-          salePrice: acc.sale_price_total ? Number(acc.sale_price_total) / Math.max(Number(acc.quantity || 1), 1) : undefined
+          cost: Number(acc.supplier_cost_total || 0) / (Math.max(Number(acc.quantity || 1), 1) * Math.max(Number(item.quantity || 1), 1)),
+          salePrice: acc.sale_price_total ? Number(acc.sale_price_total) / (Math.max(Number(acc.quantity || 1), 1) * Math.max(Number(item.quantity || 1), 1)) : undefined
         };
       }).filter((acc: any) => acc.accessory),
       chargedArea: Number(item.charged_area_m2 || 0),

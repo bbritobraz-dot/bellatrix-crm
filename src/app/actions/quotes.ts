@@ -3,44 +3,105 @@
 import { createAuthedClient } from "@/lib/supabase/server";
 import { adjustBankBalance, getOrCreateExpenseCategoryId } from "@/lib/finance/helpers";
 
+const onlyDigits = (value?: string) => (value || "").replace(/\D/g, "");
+
+/**
+ * Encontra o cliente pelo telefone (só dígitos) ou cria um novo.
+ * Antes a busca era pelo NOME: dois clientes chamados "Maria Silva" viravam a mesma pessoa.
+ */
+async function findOrCreateClient(supabase: any, data: any): Promise<string> {
+  const phoneDigits = onlyDigits(data.clientPhone);
+
+  if (phoneDigits.length >= 8) {
+    const { data: candidates } = await supabase
+      .from('clients')
+      .select('id, phone')
+      .ilike('phone', `%${phoneDigits.slice(-4)}%`);
+    const match = (candidates || []).find((c: any) => onlyDigits(c.phone) === phoneDigits);
+    if (match) return match.id;
+  }
+
+  const { data: newClient, error: clientError } = await supabase
+    .from('clients')
+    .insert({
+      name: data.clientName,
+      phone: data.clientPhone || '0000000000',
+      address: data.clientAddress,
+      status: 'novo_lead'
+    })
+    .select('id')
+    .single();
+
+  if (clientError) throw new Error("Erro ao criar cliente: " + clientError.message);
+  return newClient.id;
+}
+
+/**
+ * Insere os itens (e acessórios) de um orçamento. Se algo falhar no meio,
+ * apaga o que já tinha inserido (acessórios saem junto por ON DELETE CASCADE)
+ * e lança o erro, para não deixar um orçamento pela metade.
+ */
+async function insertQuoteItems(supabase: any, quoteId: string, items: any[]): Promise<string[]> {
+  const insertedIds: string[] = [];
+  try {
+    for (const item of items) {
+      const { data: quoteItem, error: itemError } = await supabase
+        .from('quote_items')
+        .insert({
+          quote_id: quoteId,
+          product_id: item.product.id,
+          width_m: item.width,
+          height_m: item.height,
+          quantity: item.quantity,
+          charged_area_m2: item.chargedArea,
+          supplier_cost_total: item.supplierCostTotal,
+          sale_price_total: item.salePriceTotal,
+          margin_percent: item.marginPercent,
+          notes: item.notes || ''
+        })
+        .select('id')
+        .single();
+
+      if (itemError) throw new Error("Erro ao inserir item: " + itemError.message);
+      insertedIds.push(quoteItem.id);
+
+      if (item.accessories && item.accessories.length > 0) {
+        const itemQty = Math.max(Number(item.quantity) || 1, 1);
+        const accessoriesToInsert = item.accessories.map((acc: any) => ({
+          quote_item_id: quoteItem.id,
+          accessory_id: acc.accessory.id,
+          quantity: acc.quantity,
+          // acc.cost / acc.salePrice são por unidade de acessório em UMA peça do produto;
+          // o total precisa multiplicar também pela quantidade de peças (antes faltava isso).
+          supplier_cost_total: Number(acc.cost || 0) * acc.quantity * itemQty,
+          sale_price_total: acc.salePrice != null ? Number(acc.salePrice) * acc.quantity * itemQty : null
+        }));
+
+        const { error: accError } = await supabase
+          .from('quote_item_accessories')
+          .insert(accessoriesToInsert);
+
+        if (accError) throw new Error("Erro ao inserir acessórios: " + accError.message);
+      }
+    }
+    return insertedIds;
+  } catch (error) {
+    if (insertedIds.length > 0) {
+      await supabase.from('quote_items').delete().in('id', insertedIds);
+    }
+    throw error;
+  }
+}
+
 export async function saveQuote(data: any) {
   const supabase = await createAuthedClient();
 
   try {
-    let clientId = data.clientId;
-    
-    if (!clientId) {
-      const { data: existingClient } = await supabase
-        .from('clients')
-        .select('id')
-        .eq('name', data.clientName)
-        .limit(1)
-        .single();
-
-      if (existingClient) {
-        clientId = existingClient.id;
-      } else {
-        const { data: newClient, error: clientError } = await supabase
-          .from('clients')
-          .insert({
-            name: data.clientName,
-            phone: data.clientPhone || '0000000000',
-            address: data.clientAddress,
-            status: 'novo_lead'
-          })
-          .select()
-          .single();
-
-        if (clientError) throw new Error("Erro ao criar cliente: " + clientError.message);
-        clientId = newClient.id;
-      }
+    if (!data.clientName || !data.items || data.items.length === 0) {
+      throw new Error("Informe o cliente e pelo menos um item.");
     }
 
-    // SEMPRE atualizar o status do cliente para 'orcamento_enviado' ao salvar um novo orçamento
-    await supabase
-      .from('clients')
-      .update({ status: 'orcamento_enviado' })
-      .eq('id', clientId);
+    const clientId = data.clientId || await findOrCreateClient(supabase, data);
 
     const { data: quote, error: quoteError } = await supabase
       .from('quotes')
@@ -53,46 +114,24 @@ export async function saveQuote(data: any) {
         payment_conditions: `${data.paymentMethod} - ${data.installments}x`,
         commercial_notes: "Orçamento gerado pelo sistema"
       })
-      .select()
+      .select('id')
       .single();
 
     if (quoteError) throw new Error("Erro ao criar orçamento: " + quoteError.message);
 
-    for (const item of data.items) {
-      const { data: quoteItem, error: itemError } = await supabase
-        .from('quote_items')
-        .insert({
-          quote_id: quote.id,
-          product_id: item.product.id,
-          width_m: item.width,
-          height_m: item.height,
-          quantity: item.quantity,
-          charged_area_m2: item.chargedArea,
-          supplier_cost_total: item.supplierCostTotal,
-          sale_price_total: item.salePriceTotal,
-          margin_percent: item.marginPercent,
-          notes: item.notes || ''
-        })
-        .select()
-        .single();
-
-      if (itemError) throw new Error("Erro ao inserir item: " + itemError.message);
-
-      if (item.accessories && item.accessories.length > 0) {
-        const accessoriesToInsert = item.accessories.map((acc: any) => ({
-          quote_item_id: quoteItem.id,
-          accessory_id: acc.accessory.id,
-          quantity: acc.quantity,
-          supplier_cost_total: acc.cost * acc.quantity
-        }));
-
-        const { error: accError } = await supabase
-          .from('quote_item_accessories')
-          .insert(accessoriesToInsert);
-
-        if (accError) throw new Error("Erro ao inserir acessórios: " + accError.message);
-      }
+    try {
+      await insertQuoteItems(supabase, quote.id, data.items);
+    } catch (itemsError) {
+      // Não deixa um orçamento vazio/incompleto para trás
+      await supabase.from('quotes').delete().eq('id', quote.id);
+      throw itemsError;
     }
+
+    // Só marca o cliente como "orçamento enviado" depois que tudo deu certo
+    await supabase
+      .from('clients')
+      .update({ status: 'orcamento_enviado' })
+      .eq('id', clientId);
 
     return { success: true, quoteId: quote.id };
 
@@ -102,49 +141,25 @@ export async function saveQuote(data: any) {
   }
 }
 
+/**
+ * Troca os itens de um orçamento com segurança: insere os novos primeiro e só
+ * apaga os antigos se tudo deu certo. Antes apagava tudo e depois inseria —
+ * uma falha no meio deixava o orçamento sem itens.
+ */
 async function replaceQuoteItems(supabase: any, quoteId: string, items: any[]) {
-  const { error: deleteError } = await supabase
+  const { data: oldItems, error: oldError } = await supabase
     .from('quote_items')
-    .delete()
+    .select('id')
     .eq('quote_id', quoteId);
 
-  if (deleteError) throw new Error("Erro ao limpar itens do orçamento: " + deleteError.message);
+  if (oldError) throw new Error("Erro ao ler itens do orçamento: " + oldError.message);
 
-  for (const item of items) {
-    const { data: quoteItem, error: itemError } = await supabase
-      .from('quote_items')
-      .insert({
-        quote_id: quoteId,
-        product_id: item.product.id,
-        width_m: item.width,
-        height_m: item.height,
-        quantity: item.quantity,
-        charged_area_m2: item.chargedArea,
-        supplier_cost_total: item.supplierCostTotal,
-        sale_price_total: item.salePriceTotal,
-        margin_percent: item.marginPercent,
-        notes: item.notes || ''
-      })
-      .select()
-      .single();
+  await insertQuoteItems(supabase, quoteId, items);
 
-    if (itemError) throw new Error("Erro ao inserir item: " + itemError.message);
-
-    if (item.accessories && item.accessories.length > 0) {
-      const accessoriesToInsert = item.accessories.map((acc: any) => ({
-        quote_item_id: quoteItem.id,
-        accessory_id: acc.accessory.id,
-        quantity: acc.quantity,
-        supplier_cost_total: acc.cost * acc.quantity,
-        sale_price_total: acc.salePrice ? acc.salePrice * acc.quantity : null
-      }));
-
-      const { error: accError } = await supabase
-        .from('quote_item_accessories')
-        .insert(accessoriesToInsert);
-
-      if (accError) throw new Error("Erro ao inserir acessórios: " + accError.message);
-    }
+  const oldIds = (oldItems || []).map((i: any) => i.id);
+  if (oldIds.length > 0) {
+    const { error: deleteError } = await supabase.from('quote_items').delete().in('id', oldIds);
+    if (deleteError) throw new Error("Erro ao limpar itens antigos do orçamento: " + deleteError.message);
   }
 }
 
@@ -367,7 +382,8 @@ export async function scheduleInstallation(id: string, date: string, time: strin
     .from('quotes')
     .update({ 
       status: 'pronto_para_instalacao',
-      installation_date: `${date}T${time}:00`
+      // Horário digitado é de São Paulo; sem o fuso o banco gravava como UTC (3h de diferença)
+      installation_date: `${date}T${time}:00-03:00`
     })
     .eq('id', id);
 
